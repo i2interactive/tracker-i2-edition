@@ -44,7 +44,7 @@ void cI2Controller::initDisplayControls()
         lp.text = (char*)"";
         lp.style = (controlStyleShow | controlStyleCenterX | controlStyleCenterY | controlStyleFont3);
         lp.x = (800 / 8) * i + (800 / 16);
-        lp.y = 450;
+        lp.y = 424;
         lp.w = 800 / 8 - 6;
         lp.h = 55;
         lp.value = 0;

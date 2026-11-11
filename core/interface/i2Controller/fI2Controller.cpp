@@ -12,6 +12,8 @@
 #include "core/interfaceMenuPopup.h"
 #include "core/songTimer.h"
 
+extern uint8_t externalRamScratchBuff[];
+
 cI2Controller i2Controller;
 static cI2Controller* I2C = &i2Controller;
 
@@ -26,9 +28,19 @@ constexpr size_t kIoChunk = 256; // small chunks go through FatFs' own buffer
 
 constexpr uint8_t kMaxJogTaps = 8;
 
-// Big buffers live in external SDRAM (not zeroed at boot).
-__NOINIT(EXTERNAL_RAM) i2ctl::Profile s_profile;
-__NOINIT(EXTERNAL_RAM) __attribute__((aligned(4))) char s_fileBuffer[kFileBufferSize];
+// The profile and file buffer live in the firmware's shared 768 KB scratch
+// area (externalRamScratchBuff), which modal screens borrow while they are
+// open. Tracker+ has almost no spare SDRAM, and this costs nothing. Because
+// other screens reuse the area, the profile is re-read every time Controller
+// mode opens.
+constexpr size_t kProfileOffset = 0;
+constexpr size_t kFileBufferOffset = 8 * 1024;
+static_assert(sizeof(i2ctl::Profile) <= kFileBufferOffset, "profile overlaps file buffer");
+static_assert(kFileBufferOffset + kFileBufferSize <= SHARED_SCRATCH_MEMORY_SIZE,
+              "Controller buffers exceed the shared scratch area");
+
+#define s_profile (*reinterpret_cast<i2ctl::Profile*>(externalRamScratchBuff + kProfileOffset))
+#define s_fileBuffer (reinterpret_cast<char*>(externalRamScratchBuff + kFileBufferOffset))
 
 const char* const kJogModeNames[cI2Controller::jogModeCount] = {
     "Jog: Frame",
@@ -189,10 +201,7 @@ void cI2Controller::start([[maybe_unused]] uint32_t options)
         settingsLoaded = true;
     }
 
-    if (!profileLoaded)
-    {
-        profileLoaded = loadProfile();
-    }
+    profileLoaded = loadProfile(); // always: the scratch area may have been reused
     if (layer >= s_profile.layerCount)
     {
         layer = 0;
