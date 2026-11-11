@@ -381,7 +381,7 @@ void cI2Controller::padEvent(uint8_t pad, uint8_t state)
 
         gridData.pressedMask |= (1ULL << pad);
         padsBacklight.setFrontLayer(1, mtConfig.values.padsLightFront, pad);
-        refreshGrid();
+        refreshGrid(pad / 24);
     }
     else if (state == padRelease)
     {
@@ -398,7 +398,7 @@ void cI2Controller::padEvent(uint8_t pad, uint8_t state)
         {
             gridData.pressedMask &= ~(1ULL << pad);
             padsBacklight.setFrontLayer(0, 0, pad);
-            refreshGrid();
+            refreshGrid(pad / 24);
         }
     }
 }

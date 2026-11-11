@@ -8,7 +8,8 @@
 namespace
 {
 constexpr uint8_t kCols = 12;
-constexpr uint8_t kRows = 4;
+constexpr uint8_t kRowsTotal = 4;
+constexpr uint8_t kRowsPerControl = 2;
 constexpr int16_t kGap = 3;
 
 constexpr int16_t kLabelFontIdx = 2; // 14 bold
@@ -55,7 +56,7 @@ int splitLabel(const strFont* font, const char* label, int16_t maxWidth, int& se
 } // namespace
 
 cI2PadGrid::cI2PadGrid(strControlProperties* properties)
-  : cDisplayControl(controlIdTemplate, 2)
+  : cDisplayControl(controlIdTemplate, 1)
 {
     colorsCount = 5;
 
@@ -77,15 +78,10 @@ cI2PadGrid::cI2PadGrid(strControlProperties* properties)
 
 void cI2PadGrid::update()
 {
-    drawRows(0, 2);
+    drawRows((uint8_t)value);
 }
 
-void cI2PadGrid::update2()
-{
-    drawRows(2, 2);
-}
-
-void cI2PadGrid::drawRows(uint8_t firstRow, uint8_t rowCount)
+void cI2PadGrid::drawRows(uint8_t firstRow)
 {
     if (data == nullptr || data->layer == nullptr || colors == nullptr)
     {
@@ -93,7 +89,8 @@ void cI2PadGrid::drawRows(uint8_t firstRow, uint8_t rowCount)
     }
 
     const int16_t cellW = width / kCols;
-    const int16_t cellH = height / kRows;
+    const int16_t cellH = height / kRowsPerControl;
+    const uint8_t lastRow = firstRow + kRowsPerControl;
     const int16_t originX = posX + (width - cellW * kCols) / 2;
 
     const strFont* labelFont = &fonts[kLabelFontIdx];
@@ -101,7 +98,7 @@ void cI2PadGrid::drawRows(uint8_t firstRow, uint8_t rowCount)
 
     // 1. Cell backgrounds
     API_BEGIN(RECTS);
-    for (uint8_t r = firstRow; r < firstRow + rowCount && r < kRows; r++)
+    for (uint8_t r = firstRow; r < lastRow && r < kRowsTotal; r++)
     {
         for (uint8_t c = 0; c < kCols; c++)
         {
@@ -113,7 +110,7 @@ void cI2PadGrid::drawRows(uint8_t firstRow, uint8_t rowCount)
             API_COLOR(pressed ? colors[2] : (empty ? colors[4] : colors[1]));
 
             int16_t x0 = originX + c * cellW;
-            int16_t y0 = posY + r * cellH;
+            int16_t y0 = posY + (r - firstRow) * cellH;
             API_VERTEX2F(x0 + kGap / 2, y0 + kGap / 2);
             API_VERTEX2F(x0 + cellW - kGap, y0 + cellH - kGap);
         }
@@ -121,7 +118,7 @@ void cI2PadGrid::drawRows(uint8_t firstRow, uint8_t rowCount)
     API_END();
 
     // 2. Labels and combos
-    for (uint8_t r = firstRow; r < firstRow + rowCount && r < kRows; r++)
+    for (uint8_t r = firstRow; r < lastRow && r < kRowsTotal; r++)
     {
         for (uint8_t c = 0; c < kCols; c++)
         {
@@ -133,7 +130,7 @@ void cI2PadGrid::drawRows(uint8_t firstRow, uint8_t rowCount)
             }
 
             int16_t x0 = originX + c * cellW;
-            int16_t y0 = posY + r * cellH;
+            int16_t y0 = posY + (r - firstRow) * cellH;
             int16_t cx = x0 + cellW / 2;
 
             int second = -1;

@@ -24,17 +24,20 @@ void cI2Controller::initDisplayControls()
 {
     strControlProperties prop;
 
-    // Pad grid
-    prop.colors = kGridColors;
-    prop.text = nullptr;
-    prop.data = &gridData;
-    prop.style = controlStyleShow;
-    prop.x = 0;
-    prop.y = kGridTop;
-    prop.w = 800;
-    prop.h = kGridHeight;
-    prop.value = 0;
-    grid = display.createControl<cI2PadGrid>(&prop);
+    // Pad grid: two controls of two rows each
+    for (uint8_t half = 0; half < 2; half++)
+    {
+        prop.colors = kGridColors;
+        prop.text = nullptr;
+        prop.data = &gridData;
+        prop.style = controlStyleShow;
+        prop.x = 0;
+        prop.y = kGridTop + half * (kGridHeight / 2);
+        prop.w = 800;
+        prop.h = kGridHeight / 2;
+        prop.value = half * 2; // first row
+        grid[half] = display.createControl<cI2PadGrid>(&prop);
+    }
 
     // Bottom screen-button labels
     for (uint8_t i = 0; i < 8; i++)
@@ -72,13 +75,20 @@ void cI2Controller::showScreen()
     display.synchronizeRefresh();
 }
 
-void cI2Controller::refreshGrid()
+void cI2Controller::refreshGrid(int8_t onlyHalf)
 {
     const i2ctl::Profile& p = i2ControllerProfile();
     gridData.layer = (p.layerCount > 0 && layer < p.layerCount) ? &p.layers[layer] : nullptr;
     gridData.mac = mac;
-    display.setControlData(grid, &gridData);
-    display.refreshControl(grid);
+    for (uint8_t half = 0; half < 2; half++)
+    {
+        if (onlyHalf >= 0 && onlyHalf != half)
+        {
+            continue;
+        }
+        display.setControlData(grid[half], &gridData);
+        display.refreshControl(grid[half]);
+    }
 }
 
 void cI2Controller::refreshTitle()

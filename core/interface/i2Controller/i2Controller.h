@@ -47,7 +47,7 @@ class cI2Controller : public ModuleBase
 
     // screen
     void showScreen();
-    void refreshGrid();
+    void refreshGrid(int8_t onlyHalf = -1); // -1 = both halves
     void refreshTitle();
     void refreshBottomLabels();
     void refreshPadLights();
@@ -71,7 +71,7 @@ class cI2Controller : public ModuleBase
 
     I2PadGridData gridData;
 
-    hControl grid = -1;
+    hControl grid[2] = { -1, -1 };
     hControl label[8] = { -1, -1, -1, -1, -1, -1, -1, -1 };
     hControl bgLabel = -1;
 
