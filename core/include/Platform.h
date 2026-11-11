@@ -21,6 +21,7 @@ class UsbAudio;
 class FileSystem;
 class CrcCalculator;
 class Usb;
+class UsbKeyboard;
 
 class Platform
 {
@@ -56,6 +57,23 @@ class Platform
     virtual CrcCalculator* getCrcCalculator() = 0;
     virtual SystemInfo* getSystemInfo() = 0;
     virtual Usb* getUsb() = 0;
+
+    // i2 edition: USB HID keyboard used by the i2 Controller module.
+    // Returns nullptr on platforms that don't expose one (Tracker+ / Mini for now).
+    virtual UsbKeyboard* getUsbKeyboard() { return nullptr; }
+};
+
+// i2 edition: minimal USB keyboard HAL. Keycodes are HID usage IDs
+// (page 0x07, e.g. 0x04 = A, 0x4F = Right Arrow); modifiers are the HID
+// modifier bits (0x01 Ctrl, 0x02 Shift, 0x04 Alt/Option, 0x08 GUI/Cmd).
+class UsbKeyboard
+{
+  public:
+    virtual bool isConnected() = 0;
+    // Hold a key (with its own modifiers) until release() / releaseAll().
+    virtual void press(uint8_t keycode, uint8_t modifiers) = 0;
+    virtual void release(uint8_t keycode) = 0;
+    virtual void releaseAll() = 0;
 };
 
 class CrcCalculator

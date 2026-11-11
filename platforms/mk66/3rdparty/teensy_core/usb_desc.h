@@ -369,11 +369,30 @@ let me know?  http://forum.pjrc.com/forums/4-Suggestions-amp-Bug-Reports
 #define MANUFACTURER_NAME_LEN 7
 
 #define EP0_SIZE    			64
+
+// i2 edition: adds a standard USB keyboard (HID boot keyboard) so the
+// i2 Controller module can send app shortcuts (Premiere Pro etc.) with no
+// host driver. Build with -DI2_NO_USB_KEYBOARD to get Polyend's stock layout.
+#ifndef I2_NO_USB_KEYBOARD
+#define BCD_DEVICE            	0x0277  // bumped so Windows re-reads the new interface set
+#define NUM_ENDPOINTS         	8
+#define NUM_USB_BUFFERS 		30
+#define NUM_INTERFACE   		5
+
+#define KEYBOARD_INTERFACE    	3 // Keyboard (i2 Controller)
+#define KEYBOARD_ENDPOINT     	8
+#define KEYBOARD_SIZE         	8
+#define KEYBOARD_INTERVAL     	1
+#define ENDPOINT8_CONFIG  ENDPOINT_TRANSMIT_ONLY
+
+#define RAWHID_INTERFACE      	4 // RawHID
+#else
 #define NUM_ENDPOINTS         	7
 #define NUM_USB_BUFFERS 		30
 #define NUM_INTERFACE   		4
 
 #define RAWHID_INTERFACE      	3 // RawHID
+#endif
 #define RAWHID_TX_ENDPOINT    	1
 #define RAWHID_TX_SIZE        	64
 #define RAWHID_TX_INTERVAL    	1

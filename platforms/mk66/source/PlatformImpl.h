@@ -20,6 +20,7 @@
 #include "UsbAudioImpl.h"
 #include "UsbMidiImpl.h"
 #include "UsbImpl.h"
+#include "UsbKeyboardImpl.h"
 
 class PlatformImpl final : public Platform
 {
@@ -44,6 +45,7 @@ class PlatformImpl final : public Platform
     virtual UsbAudio* getUsbAudio() override;
     virtual UsbMidi* getUsbMidi() override;
     virtual Usb* getUsb() override;
+    virtual UsbKeyboard* getUsbKeyboard() override;
     virtual ConfigManager* getConfigManager() override;
     virtual FileSystem* getFileSystem() override;
     virtual CrcCalculator* getCrcCalculator() override;
@@ -78,6 +80,7 @@ class PlatformImpl final : public Platform
     UartMidiImpl uartMidi;
     UsbMidiImpl usbMidi;
     UsbImpl usb;
+    UsbKeyboardImpl usbKeyboard;
     ConfigManagerImpl configManager;
     FileSystemImpl fileSystem;
     CrcCalculatorImpl crcCalculator;

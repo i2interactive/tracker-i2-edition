@@ -228,6 +228,11 @@ UsbMidi* PlatformImpl::getUsbMidi()
     return (UsbMidi*)&usbMidi;
 }
 
+UsbKeyboard* PlatformImpl::getUsbKeyboard()
+{
+    return &usbKeyboard;
+}
+
 UsbAudio* PlatformImpl::getUsbAudio()
 {
     return (UsbAudio*)&usbAudio;
