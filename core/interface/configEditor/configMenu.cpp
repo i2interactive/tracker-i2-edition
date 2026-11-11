@@ -26,7 +26,7 @@ constexpr uint8_t baseMenuGroupCount = 7;
 constexpr uint8_t projectMenuGroupCount = 10;
 constexpr uint8_t generalMenuGroupCount = 12;
 #else
-constexpr uint8_t baseMenuGroupCount = 6;
+constexpr uint8_t baseMenuGroupCount = 7; // i2 edition: +1 for the "i2" group
 constexpr uint8_t projectMenuGroupCount = 10;
 constexpr uint8_t generalMenuGroupCount = 12;
 #endif
@@ -54,6 +54,10 @@ cMenuGroup menuFirmware(menuBase, "Firmware", 4);
 
 #ifdef TRACKER_MINI
 cMenuGroup menuFunctionButtons(menuBase, "Fn buttons binding", 8);
+#endif
+
+#if !defined(PLATFORM_IMX)
+cMenuGroup menuI2(menuBase, "i2", 1); // i2 edition (original Tracker)
 #endif
 
 cMenuGroup menuCredits(menuBase, "Info", 4);
@@ -301,6 +305,17 @@ cMenuItem melUsbAudio(menuUsb,
 // const strItemTypeActionButton startfileTransferSetup 		{ startFileTransferMode, nullptr};
 // cMenuItem melStartFileTransfer	(menuFileTransfer, "Start file transfer",	nullptr,
 // menuTypeItemActionButton, &startfileTransferSetup);
+
+//==================================================================================================================================================================
+// i2 edition
+#if !defined(PLATFORM_IMX)
+const strItemTypeActionButton i2ControllerSetup{ openI2ControllerAction, nullptr };
+cMenuItem melOpenI2Controller(menuI2,
+                              "Controller",
+                              nullptr,
+                              menuTypeItemActionButton,
+                              &i2ControllerSetup);
+#endif
 
 //==================================================================================================================================================================
 // Credits & Info

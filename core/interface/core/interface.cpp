@@ -10,6 +10,7 @@
 #include "core/titleBar.h"
 
 #include "imageViewer/imageViewer.h"
+#include "i2Controller/i2Controller.h"
 #include "instrumentEditor/instrumentEditor.h"
 #include "masterParams/masterParams.h"
 #include "patternEditor/patternEditor.h"
@@ -66,7 +67,7 @@ const hModule Interface::modules[modulesCount] = {
     &sampleRecorder,   // 8
     &performanceMode,  // 9
     &imageViewer,      // 10
-    nullptr,           // 11
+    &i2Controller,     // 11 (i2 edition: Controller mode, formerly the NES emulator slot)
     &masterParams,     // 12
 };
 
@@ -636,6 +637,9 @@ void interfaceEnvents(uint8_t event, void* param1, void* param2, void* param3)
         }
         case eventActivateGameModule:
         {
+            // i2 edition: this event now opens Controller mode.
+            mtInterface.deactivateModule((hModule)param1);
+            mtInterface.activateModule(&i2Controller, 0);
             break;
         }
         case eventActivateImageViewer:
