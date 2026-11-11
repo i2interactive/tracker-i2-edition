@@ -54,11 +54,14 @@ jobs:
       - name: Build Original Tracker, Tracker+, and Tracker Mini firmware
         run: |
           set -o pipefail
-          POSTFIX_ARGS=""
-          if [[ "${{ github.ref }}" != refs/tags/v* ]]; then
-            SHORT_SHA=$(git rev-parse --short=7 HEAD)
-            POSTFIX_ARGS="ORIGINAL_POSTFIX=CE_${SHORT_SHA} PLUS_POSTFIX=CE_${SHORT_SHA} MINI_POSTFIX=CE_${SHORT_SHA}"
+          # i2 edition: name builds i2_<tag> (releases) or i2_<sha> (everything else),
+          # e.g. PolyendTracker_i2_v0.1.0.ptf. Keep names <= 31 characters.
+          if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
+            TAG="${GITHUB_REF_NAME}"
+          else
+            TAG=$(git rev-parse --short=7 HEAD)
           fi
+          POSTFIX_ARGS="ORIGINAL_POSTFIX=i2_${TAG} PLUS_POSTFIX=i2_${TAG} MINI_POSTFIX=i2_${TAG}"
           make all $POSTFIX_ARGS 2>&1 | tee build_output.log
 
       - name: Build reference .ptfx Sample Editor plugins
@@ -206,7 +209,7 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
-          name: Polyend Tracker CE ${{ github.ref_name }}
+          name: Tracker i2 edition ${{ github.ref_name }}
           generate_release_notes: true
           files: |
             build/*.ptf
