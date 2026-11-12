@@ -30,6 +30,7 @@ void openManual1Action();
 void openManual2Action();
 void openManual3Action();
 void openI2ControllerAction();
+void openI2ArcadeAction();
 
 void setFunctionKey1();
 void setFunctionKey2();

@@ -1,0 +1,18 @@
+seed 9
+medalnobonus
+play
+wait 140
+medalstate
+paddown 5
+wait 1800
+medalstate
+wait 1800
+medalstate
+wait 1800
+medalstate
+wait 1800
+medalstate
+wait 1800
+medalstate
+wait 1800
+medalstate

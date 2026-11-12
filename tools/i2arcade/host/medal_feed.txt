@@ -1,0 +1,29 @@
+seed 9
+play
+wait 140
+medalstate
+paddown 5
+wait 900
+medalstate
+wait 900
+medalstate
+wait 900
+medalstate
+wait 900
+medalstate
+wait 900
+medalstate
+wait 900
+medalstate
+wait 900
+medalstate
+wait 900
+medalstate
+wait 900
+medalstate
+wait 900
+medalstate
+wait 900
+medalstate
+wait 900
+medalstate

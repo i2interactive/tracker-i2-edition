@@ -1,0 +1,19 @@
+seed 7
+shot q00_title
+play
+wait 60
+shot q01_intro
+play
+wait 30
+shot q02_round
+play
+wait 100
+shot q03_reading
+quizuntil 4 2000
+wait 300
+shot q04_choices
+row 1
+wait 10
+shot q05_after
+quizuntil 10 3000
+shot q06_reveal

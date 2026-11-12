@@ -1,0 +1,47 @@
+seed 4
+play
+wait 140
+shot n01_go
+paddown 7
+wait 300
+padup 7
+shot n02_playing
+medalforce 2
+wait 40
+shot n03_reels
+wait 90
+shot n04_roulette
+play
+wait 20
+shot n05_rstop
+wait 120
+medalforce 1
+wait 120
+wait 60
+shot n06_car
+play
+wait 60
+shot n07_carstop
+wait 100
+medalforce 6
+wait 70
+shot n08_rain
+wait 40
+medalforce 4
+wait 80
+shot n09_balls
+wait 100
+medalforce 0
+wait 70
+shot n10_ava
+wait 60
+shot n11_ava2
+wait 200
+medalstate
+paddown 2
+wait 11000
+padup 2
+medalstate
+wait 400
+shot n12_results
+medalstate

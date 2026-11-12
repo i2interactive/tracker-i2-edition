@@ -57,7 +57,7 @@ cMenuGroup menuFunctionButtons(menuBase, "Fn buttons binding", 8);
 #endif
 
 #if !defined(PLATFORM_IMX)
-cMenuGroup menuI2(menuBase, "i2", 1); // i2 edition (original Tracker)
+cMenuGroup menuI2(menuBase, "i2", 2); // i2 edition (original Tracker)
 #endif
 
 cMenuGroup menuCredits(menuBase, "Info", 4);
@@ -315,6 +315,8 @@ cMenuItem melOpenI2Controller(menuI2,
                               nullptr,
                               menuTypeItemActionButton,
                               &i2ControllerSetup);
+const strItemTypeActionButton i2ArcadeSetup{ openI2ArcadeAction, nullptr };
+cMenuItem melOpenI2Arcade(menuI2, "Arcade", nullptr, menuTypeItemActionButton, &i2ArcadeSetup);
 #endif
 
 //==================================================================================================================================================================

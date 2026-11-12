@@ -11,6 +11,7 @@
 
 #include "imageViewer/imageViewer.h"
 #include "i2Controller/i2Controller.h"
+#include "i2Arcade/i2Arcade.h"
 #include "instrumentEditor/instrumentEditor.h"
 #include "masterParams/masterParams.h"
 #include "patternEditor/patternEditor.h"
@@ -54,7 +55,7 @@ extern uint8_t isAudioOutMuted();
 //=======================================================================
 //=======================================================================
 
-const uint8_t Interface::modulesCount = 13;
+const uint8_t Interface::modulesCount = 14; // i2 edition: +1 for i2 Arcade
 const hModule Interface::modules[modulesCount] = {
     &projectEditor,    // 0
     &sampleImporter,   // 1
@@ -69,6 +70,7 @@ const hModule Interface::modules[modulesCount] = {
     &imageViewer,      // 10
     &i2Controller,     // 11 (i2 edition: Controller mode, formerly the NES emulator slot)
     &masterParams,     // 12
+    &i2Arcade,         // 13 (i2 edition: i2 Arcade)
 };
 
 const uint8_t Interface::modulesButtonsCount = 11;
@@ -633,6 +635,12 @@ void interfaceEnvents(uint8_t event, void* param1, void* param2, void* param3)
             // param1 = handle to source module, param2 = start options
             mtInterface.switchModuleToPrevious((hModule)param1,
                                                param2 == nullptr ? 0 : *((uint8_t*)param2));
+            break;
+        }
+        case eventActivateI2Arcade:
+        {
+            mtInterface.deactivateModule((hModule)param1);
+            mtInterface.activateModule(&i2Arcade, 0);
             break;
         }
         case eventActivateGameModule:

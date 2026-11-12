@@ -1,0 +1,10 @@
+seed 9
+play
+wait 140
+medalstate
+wait 600
+medalstate
+wait 600
+medalstate
+wait 600
+medalstate

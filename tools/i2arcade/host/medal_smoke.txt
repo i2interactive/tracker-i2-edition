@@ -1,0 +1,20 @@
+seed 5
+shot m00_title
+play
+wait 20
+shot m01_ready
+wait 120
+medalstate
+shot m02_go
+jogfor 2 10
+paddown 3
+wait 120
+padup 3
+medalstate
+shot m03_feeding
+pad 30
+pad 31
+pad 20
+wait 200
+medalstate
+shot m04_play
