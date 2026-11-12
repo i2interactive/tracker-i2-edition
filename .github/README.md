@@ -4,21 +4,19 @@ Custom firmware for the **original Polyend Tracker** by [i2 interactive](https:/
 
 It adds **Controller mode** and the **i2 Arcade**. Controller mode: plug the Tracker into a Mac or PC over USB-C and its 48 pads, jog wheel and buttons become a hardware controller for Premiere Pro. The screen shows what every pad does. Nothing needs installing on the computer, because the Tracker shows up as a standard USB keyboard next to its usual MIDI port. Everything else on the Tracker works as it does in Community Edition.
 
-> **Status: v0.1, not yet tested on hardware.** It builds cleanly for all three Trackers, but Controller mode only appears on the original Tracker (2020). See the [test checklist](#hardware-test-checklist).
-
-## Download
-
-1. Open the [Actions tab](https://github.com/i2interactive/tracker-i2-edition/actions/workflows/build.yml) and click the newest run with a green check.
-2. Under **Artifacts**, download **polyend-tracker-ce-firmware**. You must be signed in to GitHub, and build files are kept for 90 days.
-3. Unzip it. The original Tracker file is `PolyendTracker_i2_<version>.ptf`. The `TrackerPlus_` and `TrackerMini_` files are for the other models.
+> **Status: v0.1, not yet tested on hardware.** It builds cleanly for all three Trackers, but Controller mode and the Arcade only appear on the original Tracker (2020). See the [test checklist](#hardware-test-checklist).
 
 ## Install
 
-1. **Back up your whole SD card**, projects included.
-2. Put these in `/Firmware/` on the card so you have a way back: the official **Tracker 1.9.2** and **Tracker CE 1.0** files, both from [polyend.com/downloads](https://polyend.com/downloads/).
-3. First time only: flash the official CE 1.0 and check that the Tracker boots and plays. This proves your unit takes Community Edition before any i2 code is involved.
-4. Copy `PolyendTracker_i2_<version>.ptf` to `/Firmware/`. Keep the filename 31 characters or shorter. On the Tracker, go to **Config > Firmware > Firmware update** and pick it.
-5. **If it ever hangs:** with a known-good `.ptf` in `/Firmware/`, press the recessed reset pinhole on the bottom of the Tracker while powering on.
+**Step-by-step guide: [INSTALL.md](INSTALL.md)**. It goes from a stock Tracker to Controller mode and the i2 Arcade, with recovery steps.
+
+The short version:
+1. Back up your SD card.
+2. Put the official Tracker 1.9.2 and CE 1.0 `.ptf` files from [polyend.com/downloads](https://polyend.com/downloads/) in `Firmware/` as a safety net.
+3. Download the newest **polyend-tracker-ce-firmware** artifact from the [Actions tab](https://github.com/i2interactive/tracker-i2-edition/actions/workflows/build.yml). You need to be signed in to GitHub.
+4. Copy `PolyendTracker_i2_<version>.ptf` to `Firmware/` without renaming it.
+5. On the Tracker, run **Config > Firmware > Firmware update**.
+6. Find the new **Config > i2** menu.
 
 ## Controller mode
 
