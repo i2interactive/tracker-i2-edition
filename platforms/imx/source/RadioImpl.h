@@ -27,7 +27,6 @@ class RadioImpl : public Radio
     virtual void setRegion(Region region) override;
     virtual bool isRegionChanged() override;
     virtual char* getStationName() override;
-    virtual int getSignalStrength() override;
 
 #ifndef TRACKER_MINI
     struct Pins

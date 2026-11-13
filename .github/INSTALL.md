@@ -1,10 +1,12 @@
 # Installing Tracker i2 edition
 
-A start-to-finish guide: from a stock Tracker to Controller mode and the i2 Arcade. Plan on 20–30 minutes the first time.
+A start-to-finish guide: from a stock Tracker to i2 DECK. Plan on 20–30 minutes the first time.
 
-> **Which Tracker?** This firmware is for the **original Polyend Tracker** (the 2020 desktop model). Builds for Tracker+ and Tracker Mini exist, but Controller mode and the i2 Arcade only appear on the original.
+> **Which Tracker?** This firmware is for the **original Polyend Tracker** (the 2020 desktop model). Builds for Tracker+ and Tracker Mini exist, but i2 DECK only appears on the original.
 
-> **Is it safe?** The Tracker's bootloader sits on its own chip and is never touched by a firmware update. If a build ever misbehaves, Part 8 gets you back to official firmware in a minute.
+> **Not yet tested on hardware.** This build has only been run on a PC test harness. Do Part 2 (backup) and Part 3a (official firmware on the card) before anything else.
+
+> **Is it safe?** The Tracker's bootloader sits on its own chip and is never touched by a firmware update. If a build ever misbehaves, Part 7 gets you back to official firmware in a minute.
 
 ---
 
@@ -12,7 +14,7 @@ A start-to-finish guide: from a stock Tracker to Controller mode and the i2 Arca
 
 - An original Polyend Tracker and its microSD card
 - A computer with an SD card reader (or the USB adapter that came with the Tracker)
-- A USB-C cable, for Controller mode
+- A USB-C cable to your computer
 - A free GitHub account, needed to download builds from the Actions tab (Part 3)
 
 ---
@@ -91,65 +93,53 @@ This step confirms your Tracker takes Community Edition before any i2 code is in
 1. Go to **Config > Firmware > Firmware update** again.
 2. Select **`PolyendTracker_i2_...`** and confirm.
 3. Wait for it to finish and restart.
-4. Check: **Config > Firmware** should show the new build, and the Config menu now has an **i2** group with **Controller** and **Arcade**.
+4. The Tracker should start on the **i2 DECK home screen** ("PICK A DECK"). Press **screen button 5 (MUSIC)** to check the normal Tracker is still there, then **Config > i2 > Deck** to come back.
 
 ---
 
-## Part 6: Set up Controller mode (Premiere Pro)
+## Part 6: Use i2 DECK
 
 1. Connect the Tracker to your computer with a USB-C cable. It appears as a USB keyboard alongside its normal MIDI port, and needs no driver.
    - **Mac:** if a "Keyboard Setup Assistant" window pops up, close it. Nothing needs setting up.
    - **Windows:** the first time, if the pads don't type anything, unplug the Tracker and plug it back in once.
-2. On the Tracker, open **Config > i2 > Controller**.
-3. Press **screen button 4** until it shows the right system: **OS: Mac** or **OS: Win**. The setting is remembered.
-4. Quick test: open a text editor and press **pad 6** (top row, sixth from the left). It should type `i`.
-5. Open Premiere Pro and **click on the timeline** so it has focus. Then press **pad 1** (top-left) to play and stop.
+2. On the home screen, press **screen button 7** until the top-right corner shows your computer: **MAC** or **WIN**. It is remembered.
+3. Press **screen button 1** to open **CUT**.
+4. Quick test: open a text editor and press the pad labelled **IN** (second row, far left). It should type `i`.
+5. Open Premiere Pro, **click on the timeline** so it has focus, and press **Play** on the Tracker.
 
-**Using it**
-- The screen shows what every pad does.
-- **Layers:** screen buttons 1 and 2 switch between the **Edit** layer and the **Clips & Panels** layer.
-- **Jog wheel:** steps frames. Screen button 3 changes it to 5 frames, edit points or zoom.
-- **Shift:** hold it to add Shift to anything you press.
-- **Pass-through keys:** Play is play/stop, and the arrow buttons, Delete, Copy and Insert send their usual keys.
-- **Leaving:** press **Close** (screen button 8).
+**Finding your way around**
+
+| To do this | Press |
+|---|---|
+| Send a key | The pad in the same position as the key on screen |
+| Change what the jog wheel does | Screen buttons 1–7 (the job names are along the bottom of the screen) |
+| Turn the page | Screen button 8 |
+| Go back to the home screen | Shift + screen button 8 |
+| Add Shift to a key or wheel step | Hold Shift |
+| Open the normal Tracker | MUSIC on the home screen, or any Tracker button (Pattern, Song, Config...) |
+| Come back to i2 DECK | Config > i2 > Deck |
+
+**The four decks**
+
+| Button | Deck | For | Notes |
+|---|---|---|---|
+| 1 | CUT | Premiere Pro | Premiere's default shortcuts. Two pages |
+| 2 | GRADE | DaVinci Resolve, colour page | Resolve's default shortcuts. Press **LITE** once, then the wheel trims MASTER / RED / GREEN / BLUE |
+| 3 | HUB | i2 Creative Hub / ComfyUI | Sends MIDI notes. The Hub doesn't listen yet, so this one is waiting on the Hub |
+| 4 | STATIC | The built-in FM radio | Plug in headphones (the cable is the antenna). Seek, store stations with Shift + a station pad |
 
 **Changing what a pad does (optional)**
-1. The first time Controller mode opens, it writes `i2/Controller/premiere.txt` to the SD card.
-2. Edit that file on a computer. The format is explained at the top of the file and in the [README](README.md#editing-a-profile).
-3. Put the card back and press **Reload** (screen button 5).
+1. The first time a deck opens, it writes itself to the SD card: `i2/Deck/cut.txt`, `grade.txt`, `hub.txt`, `static.txt`.
+2. Edit the file on a computer. The format is explained at the top of the file and in the [README](README.md#making-your-own-deck).
+3. Put the card back and open the deck again.
 
-The profile uses Premiere's **default** shortcuts. If you've changed shortcuts in Premiere, edit the profile to match.
+If you've changed shortcuts in Premiere or Resolve, edit the deck to match.
 
----
-
-## Part 7: Set up the i2 Arcade
-
-1. **Quiz Kagemori only:** copy the question bank to the SD card so it ends up at:
-   ```
-   i2/Arcade/Quiz/questions.txt
-   i2/Arcade/Quiz/order.txt
-   i2/Arcade/Quiz/odd.txt
-   i2/Arcade/Quiz/true.txt
-   ```
-   If you got `i2-Arcade-Quiz-bank.zip`, unzip it at the **top level of the card**. It already contains the `i2/Arcade/Quiz` folders.
-
-   > The question bank is i2 interactive content and is **not included in this repo**. Without it, Quiz Kagemori shows "QUESTION BANK NOT FOUND". Medal Mountain needs nothing extra.
-
-2. On the Tracker, open **Config > i2 > Arcade**.
-3. Press a pad in **row 1** for Quiz Kagemori or **row 2** for Medal Mountain. You can also turn the jog wheel and press Play.
-4. **Menu** (screen button 8) goes back to the game list, and **Exit** leaves the arcade.
-
-| | Quiz Kagemori | Medal Mountain |
-|---|---|---|
-| Start | Play or any pad | Play or any pad |
-| Main controls | The 4 pad rows = answers 1–4. Play or a pad buzzes in | Jog wheel or arrows move the chute, Play drops a medal, a pad drops in its column |
-| Extras | Screen button 1 = 50:50. Jog wheel sets the final wager | Play or a pad stops the roulette and the cable car |
-
-Scores and your medal bank save to `i2/Arcade/` on the SD card.
+**Starting in the normal Tracker instead:** open `i2/Deck/settings.txt` on the card and change `boot=deck` to `boot=music`.
 
 ---
 
-## Part 8: If something goes wrong
+## Part 7: If something goes wrong
 
 **The i2 file isn't in the Firmware update list**
 - It must be inside the `Firmware` folder at the top of the card.
@@ -166,12 +156,17 @@ Scores and your medal bank save to `i2/Arcade/` on the SD card.
 
 Projects saved under Community Edition may use a newer format that 1.9.2 can't open, so keep your Part 2 backup.
 
-**Controller mode types the wrong keys**
-- Check that **screen button 4** matches your computer (Mac or Win).
-- Click on Premiere's timeline first, because many shortcuts only work when the timeline has focus.
+**The Tracker starts but i2 DECK looks wrong or is stuck**
+- Press **Pattern** (or any Tracker button) to get to the normal Tracker.
+- To skip i2 DECK at start-up, put a file `i2/Deck/settings.txt` on the card containing the line `boot=music`.
 
-**Quiz says "QUESTION BANK NOT FOUND"**
-- Check the paths in Part 7. The files must be at `i2/Arcade/Quiz/` on the card, not inside an extra folder.
+**Pads type the wrong keys**
+- Check the top-right corner of the screen matches your computer (MAC or WIN). Screen button 7 on the home screen switches it.
+- Click on the timeline first, because many shortcuts only work when the timeline has focus.
+- The decks assume the app's default shortcuts.
+
+**The top-right corner says NO USB**
+- The computer hasn't picked up the Tracker as a keyboard. Check the cable, then unplug and replug once.
 
 ---
 
@@ -181,7 +176,7 @@ Projects saved under Community Edition may use a newer format that 1.9.2 can't o
 2. Copy it to `Firmware`. You can delete the older `PolyendTracker_i2_` file.
 3. Run **Config > Firmware > Firmware update** (Part 5).
 
-Your Controller profile, settings and arcade scores stay on the SD card.
+Your decks and settings stay on the SD card. If an update changes a built-in deck, delete its file in `i2/Deck/` to get the new version.
 
 ---
 
