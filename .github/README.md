@@ -28,9 +28,9 @@ Every deck uses the same layout:
 
 | Part of the screen | What it shows | What you press |
 |---|---|---|
-| **Key map** (bottom half) | The 48 pads as three 4x4 blocks, each key with a short code and a name | The pad in the same position. Lit pads have a job; a held pad lights up on screen |
+| **Key map** (bottom half) | The 48 pads as three 4x4 blocks, each key with a short code | The pad in the same position. Lit pads have a job; a held pad lights up on screen and its full name appears in the live band |
 | **Dial strip** (bottom edge) | Up to seven jobs for the jog wheel, plus PAGE | Screen buttons 1-7 pick the wheel's job. Button 8 turns the page |
-| **Live band** (top) | The wheel's current job, the last key sent, and how far each dial has moved | |
+| **Live band** (top) | The wheel's current job, the name of the last key pressed, and how far each dial has moved | |
 
 - **Shift** adds Shift to any pad or wheel step.
 - **Shift + button 8** goes back to the home screen.
@@ -117,7 +117,7 @@ i2 DECK is the start-up screen. To start in the normal Tracker, edit `i2/Deck/se
 
 ### Testing on a computer
 
-`tools/i2deck/host/` runs the firmware's own interface code on a PC with scripted input. It renders the screens to PNG, logs every key, note and radio command, fails if a key is left held, and checks each layer against the display chip's limits.
+`tools/i2deck/host/` runs the firmware's own interface code on a PC with scripted input. It renders the screens to PNG, logs every key, note and radio command, fails if a key is left held, and checks each layer and the whole frame against the display chip's limits.
 
 ```sh
 sh tools/i2deck/host/run.sh        # needs g++, Python 3 and Pillow; output in tools/i2deck/host/out/

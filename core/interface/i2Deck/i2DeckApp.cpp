@@ -838,8 +838,18 @@ void DeckApp::drawHome(Gfx& g)
     g.color(kInk);
     g.dot(12, 50, 2, kLeft, "PICK A DECK");
     g.color(kGrey);
-    g.text(788, 56, kFont12, kRight, "Press the button under a deck.");
-    g.text(788, 74, kFont12, kRight, "Shift + button 8 comes back here.");
+    g.text(788, 66, kFont12, kRight, "Press the button under a deck.");
+
+    int16_t boxes[8 * 4];
+    for (uint8_t i = 0; i < 8; i++)
+    {
+        boxes[i * 4] = (int16_t)(i * 100 + 4);
+        boxes[i * 4 + 1] = 108;
+        boxes[i * 4 + 2] = (int16_t)(i * 100 + 96);
+        boxes[i * 4 + 3] = 416;
+    }
+    g.color(kTile);
+    g.rects(boxes, 8, 6);
 
     for (uint8_t i = 0; i < 8; i++)
     {
@@ -877,8 +887,6 @@ void DeckApp::drawHome(Gfx& g)
             st = "CMD / CTRL";
         }
         int16_t x0 = (int16_t)(i * 100 + 4), x1 = (int16_t)(x0 + 92);
-        g.color(key[0] ? kTile : kTileOff);
-        g.rect(x0, 108, x1, 416, 6);
         if (!key[0]) continue;
         g.color(c);
         g.rect(x0, 108, x1, 114, 2);
@@ -905,12 +913,12 @@ void DeckApp::drawLive(Gfx& g)
     {
         int f10 = (int)(freq * 10 + 0.5f);
         snprintf(big, sizeof(big), "%d.%d FM", f10 / 10, f10 % 10);
-        snprintf(sub, sizeof(sub), "%s", rds[0] ? rds : "No station text yet");
+        snprintf(sub, sizeof(sub), "%s", rds[0] ? rds : "Shift + station pad = store");
     }
     else
     {
         snprintf(big, sizeof(big), "%s", sel.used() ? sel.name : "--");
-        snprintf(sub, sizeof(sub), "%s%s", last[0] ? "Last: " : "Press a pad or turn the wheel", last);
+        snprintf(sub, sizeof(sub), "%s%s", last[0] ? "Key: " : "Press a pad to see its name", last);
     }
     g.color(kGrey);
     g.text(12, 46, kFont12, kLeft, radio ? "TUNED" : "WHEEL");
@@ -918,11 +926,6 @@ void DeckApp::drawLive(Gfx& g)
     g.dot(12, 70, 2, kLeft, big);
     g.color(0xC9C9C2);
     g.text(12, 124, kFont14, kLeft, sub);
-    if (radio)
-    {
-        g.color(kGrey);
-        g.text(12, 146, kFont12, kLeft, "Shift + a station pad stores this frequency.");
-    }
 
     // bars
     for (uint8_t i = 0; i < 4; i++)
@@ -983,13 +986,19 @@ void DeckApp::drawLive(Gfx& g)
         g.color(kTrack);
         g.rect(392, 176, 676, 177);
         g.color(accent);
+        int16_t bars[kHistory * 4];
+        int n = 0;
         for (uint8_t i = 0; i < kHistory; i++)
         {
             int16_t h = (int16_t)(history[i] * 70 / 75);
             if (h < 1) continue;
-            int16_t x = (int16_t)(392 + i * 5);
-            g.rect(x, (int16_t)(176 - h), (int16_t)(x + 4), 176);
+            int16_t* q = &bars[n++ * 4];
+            q[0] = (int16_t)(392 + i * 5);
+            q[1] = (int16_t)(176 - h);
+            q[2] = (int16_t)(q[0] + 4);
+            q[3] = 176;
         }
+        g.rects(bars, n);
     }
 
     // pages
@@ -1014,34 +1023,55 @@ void DeckApp::drawBlock(Gfx& g, uint8_t block)
     g.color(block == 0 ? accent : kGrey);
     g.text(bx, 189, kFont12, kLeft, page().block[block]);
 
-    for (uint8_t r = 0; r < 4; r++)
+    // Tiles are drawn in three batches (empty, key, held) to keep the frame
+    // small; see the display-list note in i2Gfx.h.
+    int16_t boxes[3][16 * 4];
+    int count[3] = { 0, 0, 0 };
+    for (uint8_t i = 0; i < 16; i++)
     {
-        for (uint8_t c = 0; c < 4; c++)
-        {
-            uint8_t padIndex = (uint8_t)(r * 12 + block * 4 + c);
-            const PadDef& d = page().pads[padIndex];
-            int16_t x0 = (int16_t)(bx + c * 63), y0 = (int16_t)(206 + r * 54);
-            int16_t x1 = (int16_t)(x0 + 59), y1 = (int16_t)(y0 + 50);
-            bool on = (held >> padIndex) & 1ULL;
-            g.color(!d.used() ? kTileOff : on ? accent : kTile);
-            g.rect(x0, y0, x1, y1, 5);
-            if (!d.used()) continue;
+        uint8_t padIndex = (uint8_t)((i / 4) * 12 + block * 4 + (i % 4));
+        const PadDef& d = page().pads[padIndex];
+        int kind = !d.used() ? 0 : ((held >> padIndex) & 1ULL) ? 2 : 1;
+        int16_t* q = &boxes[kind][count[kind]++ * 4];
+        q[0] = (int16_t)(bx + (i % 4) * 63);
+        q[1] = (int16_t)(206 + (i / 4) * 54);
+        q[2] = (int16_t)(q[0] + 59);
+        q[3] = (int16_t)(q[1] + 50);
+    }
+    const uint32_t fill[3] = { kTileOff, kTile, accent };
+    for (int kind = 0; kind < 3; kind++)
+    {
+        if (count[kind] == 0) continue;
+        g.color(fill[kind]);
+        g.rects(boxes[kind], count[kind], 5);
+    }
 
-            char label[16];
+    for (int pass = 0; pass < 2; pass++)
+    {
+        bool any = false;
+        for (uint8_t i = 0; i < 16; i++)
+        {
+            uint8_t padIndex = (uint8_t)((i / 4) * 12 + block * 4 + (i % 4));
+            const PadDef& d = page().pads[padIndex];
+            bool on = (held >> padIndex) & 1ULL;
+            if (!d.used() || (int)on != pass) continue;
+            if (!any)
+            {
+                g.color(pass ? kDark : kInk);
+                any = true;
+            }
+            char code[16];
             if (d.act == kActPreset && d.arg < 8)
             {
                 int f10 = (int)(presets[d.arg] * 10 + 0.5f);
-                snprintf(label, sizeof(label), "%d.%d", f10 / 10, f10 % 10);
+                snprintf(code, sizeof(code), "%d.%d", f10 / 10, f10 % 10);
             }
             else
             {
-                snprintf(label, sizeof(label), "%s", d.label);
+                snprintf(code, sizeof(code), "%s", d.mn);
             }
-            int16_t cx = (int16_t)(x0 + 30);
-            g.color(on ? kDark : kInk);
-            g.dot(cx, (int16_t)(y0 + 9), 0, kCenterX, d.mn);
-            g.color(on ? kDark : kGrey);
-            g.text(cx, (int16_t)(y0 + 29), kFont12, kCenterX, label);
+            int16_t cx = (int16_t)(bx + (i % 4) * 63 + 30);
+            g.dot(cx, (int16_t)(206 + (i / 4) * 54 + 18), 0, kCenterX, code);
         }
     }
 }

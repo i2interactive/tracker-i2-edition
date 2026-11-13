@@ -53,6 +53,9 @@ class Gfx
     virtual void alpha(uint8_t a) = 0;
     // Filled rectangle, optional corner radius.
     virtual void rect(int16_t x0, int16_t y0, int16_t x1, int16_t y1, uint8_t radius = 0) = 0;
+    // Many filled rectangles of one colour: xyxy = x0, y0, x1, y1 per rect.
+    // Much cheaper in display memory than separate rect() calls.
+    virtual void rects(const int16_t* xyxy, int n, uint8_t radius = 0) = 0;
     // Filled circle.
     virtual void circle(int16_t cx, int16_t cy, int16_t r) = 0;
     // Many filled circles of one size and colour: xy = x0, y0, x1, y1, ...
@@ -126,8 +129,9 @@ class Services
 };
 
 // Each layer is its own display control, redrawn only when dirty. A layer's
-// drawing must fit the graphics chip's 4 KB command buffer (and its 8 KB
-// display-list slot); split busy screens across layers.
+// drawing must fit the graphics chip's 4 KB command buffer, and ALL layers
+// together must fit the chip's 8 KB display list (the whole frame). Text is
+// the expensive part: budget 8 bytes per character.
 constexpr uint8_t kLayerCount = 6; // 0 = background, 1-5 = foreground
 
 class Game

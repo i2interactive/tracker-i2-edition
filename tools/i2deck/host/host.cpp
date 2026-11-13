@@ -68,6 +68,18 @@ class RecGfx : public Gfx
         snprintf(b, sizeof(b), "R %d %d %d %d %d\n", x0, y0, x1, y1, radius);
         add(b, 20, 20);
     }
+    void rects(const int16_t* xyxy, int n, uint8_t radius) override
+    {
+        if (n <= 0) return;
+        char b[64];
+        for (int i = 0; i < n; i++)
+        {
+            snprintf(b, sizeof(b), "R %d %d %d %d %d\n", xyxy[4 * i], xyxy[4 * i + 1], xyxy[4 * i + 2], xyxy[4 * i + 3], radius);
+            out += b;
+        }
+        dl += 12 + 8 * n;
+        cmd += 12 + 8 * n;
+    }
     void circle(int16_t cx, int16_t cy, int16_t r) override
     {
         char b[48];
@@ -93,7 +105,7 @@ class RecGfx : public Gfx
         out += "\n";
         int glyphs = 0;
         for (int i = 0; i < n; i++) glyphs += s[i] != ' ';
-        dl += 16 + 4 * glyphs;
+        dl += 16 + 8 * glyphs;
         cmd += 12 + ((n + 4) & ~3);
     }
     int16_t textWidth(uint8_t font, const char* s, int len) override
@@ -121,7 +133,7 @@ class RecGfx : public Gfx
         out += "\n";
         int glyphs = 0;
         for (int i = 0; i < n; i++) glyphs += s[i] != ' ';
-        dl += 16 + 4 * glyphs;
+        dl += 16 + 8 * glyphs;
         cmd += 12 + ((n + 4) & ~3);
     }
     void clip(int16_t x, int16_t y, int16_t w, int16_t h) override
@@ -360,7 +372,14 @@ int main(int argc, char** argv)
     uint32_t frames = 0;
     size_t worst[kLayerCount] = {};
     size_t worstCmd[kLayerCount] = {};
+    size_t current[kLayerCount] = {};
+    size_t worstFrame = 0;
     RecGfx g;
+    auto frameCheck = [&]() {
+        size_t sum = 0;
+        for (size_t c : current) sum += c;
+        if (sum > worstFrame) worstFrame = sum;
+    };
 
     auto advance = [&](int n) {
         for (int i = 0; i < n; i++)
@@ -373,9 +392,11 @@ int main(int argc, char** argv)
                 if (!app.dirty(layer)) continue;
                 g.reset();
                 app.draw(g, layer);
+                current[layer] = g.dl;
                 if (g.dl > worst[layer]) worst[layer] = g.dl;
                 if (g.cmd > worstCmd[layer]) worstCmd[layer] = g.cmd;
             }
+            frameCheck();
         }
     };
 
@@ -388,6 +409,7 @@ int main(int argc, char** argv)
             app.draw(g, layer);
             if (g.dl > worst[layer]) worst[layer] = g.dl;
             if (g.cmd > worstCmd[layer]) worstCmd[layer] = g.cmd;
+            current[layer] = g.dl;
             fprintf(f, "# layer %d dl=%zu cmd=%zu\n", layer, g.dl, g.cmd);
             fputs(g.out.c_str(), f);
         }
@@ -395,7 +417,10 @@ int main(int argc, char** argv)
         for (int p = 0; p < 48; p++) fprintf(f, "%d", sv.pads[p]);
         fprintf(f, "\n");
         fclose(f);
-        printf("shot %s\n", name);
+        frameCheck();
+        size_t sum = 0;
+        for (size_t c : current) sum += c;
+        printf("shot %-18s frame %zu B\n", name, sum);
     };
 
     char line[256];
@@ -509,6 +534,11 @@ int main(int argc, char** argv)
         printf("layer %d worst: display list %zu B (limit 8192), commands %zu B (limit 3800)\n", l, worst[l], worstCmd[l]);
         bad |= worst[l] > 8000 || worstCmd[l] > 3700;
     }
+    // The Tracker builds each frame from every visible control and stops
+    // adding controls at 8172 bytes. Stay well under, to leave room for the
+    // Tracker's own controls and for error in these estimates.
+    printf("whole frame worst: %zu B (budget 6000, hard limit 8172)\n", worstFrame);
+    bad |= worstFrame > 6000;
     if (io.stuck)
     {
         printf("!! %d key-up without key-down\n", io.stuck);

@@ -23,6 +23,7 @@ class Ft812Gfx final : public Gfx
     virtual void color(uint32_t rgb) override;
     virtual void alpha(uint8_t a) override;
     virtual void rect(int16_t x0, int16_t y0, int16_t x1, int16_t y1, uint8_t radius = 0) override;
+    virtual void rects(const int16_t* xyxy, int n, uint8_t radius = 0) override;
     virtual void circle(int16_t cx, int16_t cy, int16_t r) override;
     virtual void points(const int16_t* xy, int n, int16_t r) override;
     virtual void fillBelow(const int16_t* xy, int n) override;

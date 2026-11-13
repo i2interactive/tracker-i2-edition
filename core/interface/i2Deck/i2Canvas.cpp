@@ -89,6 +89,21 @@ void Ft812Gfx::rect(int16_t x0, int16_t y0, int16_t x1, int16_t y1, uint8_t radi
     API_END();
 }
 
+void Ft812Gfx::rects(const int16_t* xyxy, int n, uint8_t radius)
+{
+    if (n <= 0) return;
+    if (!spend((uint16_t)(12 + 8 * n))) return;
+    int16_t r = radius ? radius : 1;
+    API_LINE_WIDTH((uint16_t)(r * 16));
+    API_BEGIN(RECTS);
+    for (int i = 0; i < n; i++)
+    {
+        API_VERTEX2F((int16_t)(xyxy[4 * i] + r), (int16_t)(xyxy[4 * i + 1] + r));
+        API_VERTEX2F((int16_t)(xyxy[4 * i + 2] - 1 - r), (int16_t)(xyxy[4 * i + 3] - 1 - r));
+    }
+    API_END();
+}
+
 void Ft812Gfx::circle(int16_t cx, int16_t cy, int16_t r)
 {
     if (!spend(16)) return;
