@@ -1058,13 +1058,8 @@ void openManual3Action()
     CE->eventFunct(eventActivateImageViewer, CE, &folderIndex, 0);
 }
 
-void openI2ControllerAction()
+void openI2DeckAction()
 {
     CE->eventFunct(eventActivateGameModule, CE, 0, 0);
-}
-
-void openI2ArcadeAction()
-{
-    CE->eventFunct(eventActivateI2Arcade, CE, 0, 0);
 }
 

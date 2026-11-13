@@ -195,3 +195,8 @@ I2cDevice* RadioImpl::getI2cDevice()
     return &radioDriver;
 }
 #endif
+
+int RadioImpl::getSignalStrength()
+{
+    return radioDriver.getRSSI();
+}

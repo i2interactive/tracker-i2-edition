@@ -29,8 +29,7 @@ void startFileTransferMode();
 void openManual1Action();
 void openManual2Action();
 void openManual3Action();
-void openI2ControllerAction();
-void openI2ArcadeAction();
+void openI2DeckAction();
 
 void setFunctionKey1();
 void setFunctionKey2();

@@ -1,4 +1,4 @@
-#include "i2ControllerProfile.h"
+#include "i2Keys.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -20,6 +20,9 @@ const NamedKey kNamedKeys[] = {
     { "-", 0x2D },      { "EQUAL", 0x2E },  { "=", 0x2E },       { "[", 0x2F },
     { "]", 0x30 },      { "\\", 0x31 },     { "BACKSLASH", 0x31 },     { ";", 0x33 },       { "'", 0x34 },
     { "`", 0x35 },      { ",", 0x36 },      { ".", 0x37 },       { "/", 0x38 },
+    { "KP1", 0x59 }, { "KP2", 0x5A }, { "KP3", 0x5B }, { "KP4", 0x5C }, { "KP5", 0x5D },
+    { "KP6", 0x5E }, { "KP7", 0x5F }, { "KP8", 0x60 }, { "KP9", 0x61 }, { "KP0", 0x62 },
+    { "KPPLUS", 0x57 }, { "KPMINUS", 0x56 }, { "KPENTER", 0x58 },
     { "INS", 0x49 },    { "HOME", 0x4A },   { "PGUP", 0x4B },    { "DEL", 0x4C },
     { "END", 0x4D },    { "PGDN", 0x4E },   { "RIGHT", 0x4F },   { "LEFT", 0x50 },
     { "DOWN", 0x51 },   { "UP", 0x52 },
@@ -131,29 +134,6 @@ bool parseKeyToken(const char* token, size_t length, uint8_t& usage)
     return false;
 }
 
-void copyField(char* dest, size_t destLen, const char* start, const char* end)
-{
-    size_t n = (size_t)(end - start);
-    if (n >= destLen)
-    {
-        n = destLen - 1;
-    }
-    memcpy(dest, start, n);
-    dest[n] = 0;
-}
-
-const char* findChar(const char* start, const char* end, char c)
-{
-    for (const char* p = start; p < end; p++)
-    {
-        if (*p == c)
-        {
-            return p;
-        }
-    }
-    return nullptr;
-}
-
 } // namespace
 
 bool parseKeySpec(const char* spec, size_t length, bool forMac, KeyCombo& out)
@@ -219,130 +199,6 @@ bool parseKeySpec(const char* spec, size_t length, bool forMac, KeyCombo& out)
     }
 
     return !out.isEmpty();
-}
-
-int parseProfile(const char* text, size_t length, Profile& out)
-{
-    memset(&out, 0, sizeof(out));
-    strcpy(out.name, "Profile");
-
-    int accepted = 0;
-    int layer = -1;
-
-    const char* p = text;
-    const char* end = text + length;
-
-    while (p < end)
-    {
-        const char* lineEnd = p;
-        while (lineEnd < end && *lineEnd != '\n')
-        {
-            lineEnd++;
-        }
-
-        const char* s = p;
-        const char* e = lineEnd;
-        trim(s, e);
-        p = (lineEnd < end) ? lineEnd + 1 : end;
-
-        if (s >= e || *s == '#')
-        {
-            continue;
-        }
-
-        if ((e - s) > 5 && tokenEquals(s, 4, "NAME") && isSpace(s[4]))
-        {
-            const char* v = s + 5;
-            const char* ve = e;
-            trim(v, ve);
-            copyField(out.name, sizeof(out.name), v, ve);
-            continue;
-        }
-
-        if ((e - s) > 6 && tokenEquals(s, 5, "LAYER") && isSpace(s[5]))
-        {
-            if (out.layerCount >= kMaxLayers)
-            {
-                layer = -1; // ignore extra layers
-                continue;
-            }
-            layer = out.layerCount++;
-            const char* v = s + 6;
-            const char* ve = e;
-            trim(v, ve);
-            copyField(out.layers[layer].name, sizeof(out.layers[layer].name), v, ve);
-            continue;
-        }
-
-        // Pad line: <number> <label> | <spec> [| <windows spec>]
-        if (*s < '0' || *s > '9')
-        {
-            continue;
-        }
-
-        if (layer < 0)
-        {
-            if (out.layerCount >= kMaxLayers)
-            {
-                continue;
-            }
-            layer = out.layerCount++;
-            strcpy(out.layers[layer].name, "Layer");
-        }
-
-        int padNumber = 0;
-        const char* q = s;
-        while (q < e && *q >= '0' && *q <= '9')
-        {
-            padNumber = padNumber * 10 + (*q - '0');
-            q++;
-        }
-        if (padNumber < 1 || padNumber > kPadCount)
-        {
-            continue;
-        }
-
-        const char* bar1 = findChar(q, e, '|');
-        if (bar1 == nullptr)
-        {
-            continue;
-        }
-        const char* bar2 = findChar(bar1 + 1, e, '|');
-
-        const char* labelStart = q;
-        const char* labelEnd = bar1;
-        trim(labelStart, labelEnd);
-
-        const char* macStart = bar1 + 1;
-        const char* macEnd = (bar2 != nullptr) ? bar2 : e;
-        trim(macStart, macEnd);
-
-        const char* winStart = macStart;
-        const char* winEnd = macEnd;
-        if (bar2 != nullptr)
-        {
-            winStart = bar2 + 1;
-            winEnd = e;
-            trim(winStart, winEnd);
-        }
-
-        PadAction& action = out.layers[layer].pads[padNumber - 1];
-        KeyCombo mac{};
-        KeyCombo win{};
-        bool macOk = parseKeySpec(macStart, (size_t)(macEnd - macStart), true, mac);
-        bool winOk = parseKeySpec(winStart, (size_t)(winEnd - winStart), false, win);
-        if (!macOk && !winOk)
-        {
-            continue;
-        }
-
-        copyField(action.label, sizeof(action.label), labelStart, labelEnd);
-        action.mac = mac;
-        action.win = win;
-        accepted++;
-    }
-
-    return accepted;
 }
 
 void formatCombo(const KeyCombo& combo, bool forMac, char* buf, size_t bufLen)

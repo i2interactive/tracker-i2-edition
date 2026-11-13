@@ -10,8 +10,7 @@
 #include "core/titleBar.h"
 
 #include "imageViewer/imageViewer.h"
-#include "i2Controller/i2Controller.h"
-#include "i2Arcade/i2Arcade.h"
+#include "i2Deck/i2Deck.h"
 #include "instrumentEditor/instrumentEditor.h"
 #include "masterParams/masterParams.h"
 #include "patternEditor/patternEditor.h"
@@ -55,7 +54,7 @@ extern uint8_t isAudioOutMuted();
 //=======================================================================
 //=======================================================================
 
-const uint8_t Interface::modulesCount = 14; // i2 edition: +1 for i2 Arcade
+const uint8_t Interface::modulesCount = 13;
 const hModule Interface::modules[modulesCount] = {
     &projectEditor,    // 0
     &sampleImporter,   // 1
@@ -68,9 +67,8 @@ const hModule Interface::modules[modulesCount] = {
     &sampleRecorder,   // 8
     &performanceMode,  // 9
     &imageViewer,      // 10
-    &i2Controller,     // 11 (i2 edition: Controller mode, formerly the NES emulator slot)
+    &i2Deck,           // 11 (i2 edition: i2 DECK, formerly the NES emulator slot)
     &masterParams,     // 12
-    &i2Arcade,         // 13 (i2 edition: i2 Arcade)
 };
 
 const uint8_t Interface::modulesButtonsCount = 11;
@@ -267,7 +265,20 @@ void Interface::processStartScreen()
 #ifdef TRACKER_MINI
             initSpecialMiniTrackerButtons();
 #endif
+#if !defined(PLATFORM_IMX)
+            // i2 edition: the original Tracker starts in i2 DECK unless
+            // i2/Deck/settings.txt on the SD card says boot=music.
+            if (cI2Deck::startsFirst(platform))
+            {
+                activateModule(&i2Deck, 0);
+            }
+            else
+            {
+                activateModule(&patternEditor, 0);
+            }
+#else
             activateModule(&patternEditor, 0);
+#endif
             unmuteAudioOutByKey();
 
 #ifdef TRACKER_MINI
@@ -637,17 +648,11 @@ void interfaceEnvents(uint8_t event, void* param1, void* param2, void* param3)
                                                param2 == nullptr ? 0 : *((uint8_t*)param2));
             break;
         }
-        case eventActivateI2Arcade:
-        {
-            mtInterface.deactivateModule((hModule)param1);
-            mtInterface.activateModule(&i2Arcade, 0);
-            break;
-        }
         case eventActivateGameModule:
         {
-            // i2 edition: this event now opens Controller mode.
+            // i2 edition: this event now opens i2 DECK.
             mtInterface.deactivateModule((hModule)param1);
-            mtInterface.activateModule(&i2Controller, 0);
+            mtInterface.activateModule(&i2Deck, 0);
             break;
         }
         case eventActivateImageViewer:

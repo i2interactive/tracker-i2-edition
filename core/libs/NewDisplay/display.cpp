@@ -7,6 +7,7 @@
 #include "Themes.h"
 #include "TrackerImpl.h"
 #include "display.h"
+#include "i2Deck/i2DotFont.h"
 #include "elapsedMillis.h"
 
 #include "polyassert.h"
@@ -81,6 +82,33 @@
 static constexpr int kMaxFontBufferSize = 22396;
 __NOINIT(EXTERNAL_RAM) uint8_t poly_logo_160x172_l8[27520];
 __NOINIT(EXTERNAL_RAM) uint8_t decompressedFontsCommonBuffer[kMaxFontBufferSize];
+
+// i2 edition: the 5x7 dot-matrix face used by i2 DECK, in three sizes. The
+// glyphs are generated here from one small table and loaded into the display
+// chip above the Tracker's own fonts.
+static_assert(i2dot::kMaxFontBytes <= kMaxFontBufferSize, "dot font needs a bigger buffer");
+
+static void i2LoadDotFonts(DisplayDriver* driver)
+{
+    for (uint8_t size = 0; size < i2dot::kSizes; size++)
+    {
+        uint32_t length = i2dot::buildFont(size, decompressedFontsCommonBuffer);
+        driver->writeFontRAMG(decompressedFontsCommonBuffer, length, i2dot::kAddress[size]);
+    }
+}
+
+// Call inside a coprocessor list, after the Tracker's fonts are registered.
+static void i2RegisterDotFonts()
+{
+    for (uint8_t size = 0; size < i2dot::kSizes; size++)
+    {
+        API_BITMAP_HANDLE(i2dot::kHandle[size]);
+        API_BITMAP_SOURCE(i2dot::kAddress[size] + i2dot::kMetricSize);
+        API_BITMAP_LAYOUT(L1, i2dot::stride(size), i2dot::cellH(size));
+        API_BITMAP_SIZE(NEAREST, BORDER, BORDER, i2dot::cellW(size), i2dot::cellH(size));
+        API_CMD_SETFONT2(i2dot::kHandle[size], i2dot::kAddress[size], i2dot::kFirstChar);
+    }
+}
 
 const uint8_t displayFontCount = 5;
 
@@ -264,6 +292,7 @@ void cDisplay::loadFont(const CompressedFontData* fontsData, uint8_t fontCount)
 
         displayDriver->writeFontRAMG(decompressedFontData, fonts[i].size, fonts[i].address);
     }
+    i2LoadDotFonts(displayDriver);
 
     displayDriver->beginCoProList();
     API_CMD_DLSTART();
@@ -285,6 +314,7 @@ void cDisplay::loadFont(const CompressedFontData* fontsData, uint8_t fontCount)
         API_BITMAP_SIZE(NEAREST, BORDER, BORDER, fonts[i].width, fonts[i].height);
         API_CMD_SETFONT2(fonts[i].handle, fonts[i].address, first_char);
     }
+    i2RegisterDotFonts();
 
     API_DISPLAY();
     API_CMD_SWAP();
@@ -1345,6 +1375,7 @@ bool cDisplay::loadCustomFontFromSD(FileSystem* fs, const char* fontFilePath)
 
         displayDriver->writeFontRAMG(decompressedFontsCommonBuffer, fonts[i].size, fonts[i].address);
     }
+    i2LoadDotFonts(displayDriver);
 
     fs->closeFile(file);
 
@@ -1368,6 +1399,7 @@ bool cDisplay::loadCustomFontFromSD(FileSystem* fs, const char* fontFilePath)
         API_BITMAP_SIZE(NEAREST, BORDER, BORDER, fonts[i].width, fonts[i].height);
         API_CMD_SETFONT2(fonts[i].handle, fonts[i].address, first_char);
     }
+    i2RegisterDotFonts();
 
     API_DISPLAY();
     API_CMD_SWAP();

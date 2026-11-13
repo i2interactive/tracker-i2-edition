@@ -1,11 +1,11 @@
-#ifndef INTERFACE_I2ARCADE_I2ARCADECANVAS_H_
-#define INTERFACE_I2ARCADE_I2ARCADECANVAS_H_
+#ifndef INTERFACE_I2DECK_I2CANVAS_H_
+#define INTERFACE_I2DECK_I2CANVAS_H_
 
-// i2 edition: the display control that hosts one layer of an i2 Arcade game,
-// and the FT812 implementation of the games' Gfx interface.
+// i2 edition: the display control that hosts one layer of an i2 screen, and
+// the FT812 implementation of the Gfx interface.
 
 #include "displayControls.h"
-#include "i2ArcadeApi.h"
+#include "i2Gfx.h"
 
 namespace i2arc
 {
@@ -30,6 +30,7 @@ class Ft812Gfx final : public Gfx
     virtual void text(int16_t x, int16_t y, uint8_t font, uint8_t align, const char* s, int len = 0) override;
     virtual int16_t textWidth(uint8_t font, const char* s, int len = -1) override;
     virtual int16_t fontHeight(uint8_t font) override;
+    virtual void dot(int16_t x, int16_t y, uint8_t size, uint8_t align, const char* s, int len = 0) override;
     virtual void clip(int16_t x, int16_t y, int16_t w, int16_t h) override;
     virtual void unclip() override;
 
@@ -49,11 +50,11 @@ struct CanvasData
     uint8_t layer = 0;
 };
 
-class cI2ArcadeCanvas : public cDisplayControl
+class cI2Canvas : public cDisplayControl
 {
   public:
-    cI2ArcadeCanvas(strControlProperties* properties = nullptr);
-    virtual ~cI2ArcadeCanvas() {}
+    cI2Canvas(strControlProperties* properties = nullptr);
+    virtual ~cI2Canvas() {}
 
     virtual void update() override;
 
@@ -69,4 +70,4 @@ class cI2ArcadeCanvas : public cDisplayControl
 
 } // namespace i2arc
 
-#endif /* INTERFACE_I2ARCADE_I2ARCADECANVAS_H_ */
+#endif /* INTERFACE_I2DECK_I2CANVAS_H_ */

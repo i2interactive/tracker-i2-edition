@@ -1,9 +1,10 @@
-#include "i2ArcadeCanvas.h"
+#include "i2Canvas.h"
 
 #include <string.h>
 
 #include "FT812.h"
 #include "display.h"
+#include "i2DotFont.h"
 
 namespace i2arc
 {
@@ -170,6 +171,27 @@ int16_t Ft812Gfx::fontHeight(uint8_t font)
     return isRomFont(font) ? romHeight(font) : trackerFont(font)->height;
 }
 
+void Ft812Gfx::dot(int16_t x, int16_t y, uint8_t size, uint8_t align, const char* s, int len)
+{
+    if (s == nullptr || *s == 0 || size >= i2dot::kSizes) return;
+    // The dot fonts hold ASCII 32-95 only: fold lower case, blank the rest.
+    char buf[32];
+    int n = len > 0 ? len : (int)strlen(s);
+    if (n > (int)sizeof(buf) - 1) n = (int)sizeof(buf) - 1;
+    for (int i = 0; i < n; i++)
+    {
+        char c = s[i];
+        if (c >= 'a' && c <= 'z') c = (char)(c - 'a' + 'A');
+        buf[i] = (c >= 32 && c <= 95) ? c : ' ';
+    }
+    buf[n] = 0;
+    if (!spend((uint16_t)(12 + ((n + 4) & ~3)))) return;
+    uint16_t opt = 0;
+    if (align & kCenterX) opt |= OPT_CENTERX;
+    else if (align & kRight) opt |= OPT_RIGHTX;
+    API_CMD_TEXT(x, y, i2dot::kHandle[size], opt, buf);
+}
+
 void Ft812Gfx::clip(int16_t x, int16_t y, int16_t w, int16_t h)
 {
     if (!spend(8)) return;
@@ -186,11 +208,11 @@ void Ft812Gfx::unclip()
 }
 
 //==============================================================================================================
-// cI2ArcadeCanvas
+// cI2Canvas
 //==============================================================================================================
 static Ft812Gfx s_gfx;
 
-cI2ArcadeCanvas::cI2ArcadeCanvas(strControlProperties* properties)
+cI2Canvas::cI2Canvas(strControlProperties* properties)
   : cDisplayControl(controlIdTemplate, 1)
 {
     colorsCount = 0;
@@ -209,7 +231,7 @@ cI2ArcadeCanvas::cI2ArcadeCanvas(strControlProperties* properties)
     style = properties->style;
 }
 
-void cI2ArcadeCanvas::update()
+void cI2Canvas::update()
 {
     if (data == nullptr || data->game == nullptr)
     {

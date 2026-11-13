@@ -1,11 +1,11 @@
-#ifndef INTERFACE_I2ARCADE_I2ARCADEAPI_H_
-#define INTERFACE_I2ARCADE_I2ARCADEAPI_H_
+#ifndef INTERFACE_I2DECK_I2GFX_H_
+#define INTERFACE_I2DECK_I2GFX_H_
 
-// i2 edition: i2 Arcade shared API.
+// i2 edition: shared drawing and app API for i2 screens (i2 DECK).
 //
-// Games are written against these small interfaces only (no Tracker headers),
-// so the same game code runs in the firmware and in the host test harness in
-// tools/i2arcade-host/, which renders frames to PNG.
+// Screens are written against these small interfaces only (no Tracker
+// headers), so the same code runs in the firmware and in the PC test harness
+// in tools/i2deck/host/, which renders frames to PNG.
 
 #include <stddef.h>
 #include <stdint.h>
@@ -13,12 +13,11 @@
 namespace i2arc
 {
 
-// Game canvas: the area between the Tracker's title bar and the screen-button
-// labels.
+// The canvas is the whole screen.
 constexpr int16_t kCanvasX = 0;
-constexpr int16_t kCanvasY = 30;
+constexpr int16_t kCanvasY = 0;
 constexpr int16_t kCanvasW = 800;
-constexpr int16_t kCanvasH = 394;
+constexpr int16_t kCanvasH = 480;
 
 // Fonts. 0-4 are the Tracker's own fonts (exact metrics); 26-31 are the
 // graphics chip's built-in ROM fonts (use only with alignment flags, not for
@@ -66,6 +65,9 @@ class Gfx
     // Exact for fonts 0-4; an estimate for ROM fonts.
     virtual int16_t textWidth(uint8_t font, const char* s, int len = -1) = 0;
     virtual int16_t fontHeight(uint8_t font) = 0;
+    // Dot-matrix text in i2's 5x7 face. size 0 small, 1 medium, 2 large.
+    // Upper case only (lower case is drawn as upper).
+    virtual void dot(int16_t x, int16_t y, uint8_t size, uint8_t align, const char* s, int len = 0) = 0;
     // Clip drawing to a rectangle (until the next clip / unclip).
     virtual void clip(int16_t x, int16_t y, int16_t w, int16_t h) = 0;
     virtual void unclip() = 0;
@@ -86,6 +88,10 @@ enum class Button : uint8_t
     Screen4,
     Screen5,
     Screen6,
+    Screen7,
+    Delete,
+    Copy,
+    Insert,
 };
 
 enum class Sfx : uint8_t
@@ -107,7 +113,7 @@ class Services
   public:
     virtual ~Services() {}
     virtual uint32_t random32() = 0;
-    // Reads a text file from the SD card (paths under i2/Arcade/). Returns the
+    // Reads a text file from the SD card (paths under i2/Deck/). Returns the
     // length, or -1 if missing.
     virtual int32_t loadText(const char* path, char* buf, size_t cap) = 0;
     virtual bool saveText(const char* path, const char* data, size_t len) = 0;
@@ -115,14 +121,14 @@ class Services
     // Pad lights: level 0 off, 1 dim, 2 bright.
     virtual void padLight(uint8_t pad, uint8_t level) = 0;
     virtual void padsOff() = 0;
-    // Large shared work memory (valid while the arcade is open).
+    // Large shared work memory (valid while the i2 screen is open).
     virtual uint8_t* scratch(size_t& size) = 0;
 };
 
 // Each layer is its own display control, redrawn only when dirty. A layer's
 // drawing must fit the graphics chip's 4 KB command buffer (and its 8 KB
 // display-list slot); split busy screens across layers.
-constexpr uint8_t kLayerCount = 3; // 0 = background, 1 and 2 = foreground
+constexpr uint8_t kLayerCount = 6; // 0 = background, 1-5 = foreground
 
 class Game
 {
@@ -169,4 +175,4 @@ inline int irand(Services& sv, int n)
 
 } // namespace i2arc
 
-#endif /* INTERFACE_I2ARCADE_I2ARCADEAPI_H_ */
+#endif /* INTERFACE_I2DECK_I2GFX_H_ */

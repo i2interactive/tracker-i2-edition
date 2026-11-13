@@ -262,6 +262,8 @@ class Radio
     virtual void setRegion(Region region) = 0;
     virtual bool isRegionChanged() = 0;
     virtual char* getStationName() = 0;
+    // i2 edition: received signal strength (the tuner's RSSI, about 0-75)
+    virtual int getSignalStrength() { return 0; }
 };
 
 class Sgtl5000

@@ -111,3 +111,8 @@ char* RadioImpl::getStationName()
 {
     return radioDriver.rds_data.nazwaStacji;
 }
+
+int RadioImpl::getSignalStrength()
+{
+    return radioDriver.getRSSI();
+}

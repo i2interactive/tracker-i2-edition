@@ -270,7 +270,6 @@ enum interfaceEvents
 
     eventActivateImageViewer,
     eventActivateGameModule,
-    eventActivateI2Arcade, // i2 edition
 
     eventSetFileTransferMode,
 

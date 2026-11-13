@@ -1,0 +1,93 @@
+# A walk through every screen. Screen buttons are 1-8, pads 0-47.
+wait 5
+shot 01_home
+screen 7
+wait 2
+shot 02_home_win
+screen 7
+# CUT
+screen 1
+wait 3
+shot 03_cut
+paddown 16
+jogfor 1 6
+shot 04_cut_held
+padup 16
+expectheld 0
+allpads
+expectheld 0
+screen 4
+jogfor 3 4
+jogfor -1 9
+btn play
+btn left
+btn delete
+btn copy
+btn insert
+shift 1
+pad 0
+jog 2
+shift 0
+expectheld 0
+screen 8
+wait 2
+shot 05_cut_clips
+allpads
+shift 1
+screen 8
+shift 0
+wait 2
+# GRADE
+screen 2
+wait 2
+screen 2
+jogfor 1 7
+screen 3
+jogfor -1 4
+pad 8
+shot 06_grade
+allpads
+expectheld 0
+screen 8
+# HUB
+screen 3
+wait 2
+paddown 0
+paddown 17
+screen 3
+jogfor 2 5
+shot 07_hub
+padup 0
+padup 17
+allpads
+usb 0
+screen 8
+# STATIC
+screen 4
+wait 20
+rds KXYZ FM - MORNING SHOW
+signal 44
+wait 40
+shot 08_static
+pad 1
+wait 20
+pad 3
+pad 3
+jogfor 1 12
+shift 1
+pad 5
+shift 0
+pad 4
+pad 8
+signal 12
+wait 40
+signal 61
+wait 40
+shot 09_static_send
+pad 9
+expectleft 1
+screen 8
+# back home, then out to the Tracker
+shot 10_home_again
+screen 5
+expectleft 0

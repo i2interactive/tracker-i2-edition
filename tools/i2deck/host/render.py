@@ -1,12 +1,26 @@
-"""Renders host-harness recordings (*.txt) to PNG: the Tracker screen
-(800x480, with a mock title bar and screen-button labels) plus a strip
-showing which of the 48 pads are lit."""
+"""Renders host-harness recordings (*.txt) to PNG: the Tracker's 800x480
+screen plus a strip showing which of the 48 pads are lit."""
+import re
 import sys
 from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFont
 
 from fonts import FONTS
+
+# i2's 5x7 dot face: the same table the firmware uses (i2DotFont.cpp)
+DOT_PITCH = [2, 3, 6]
+DOT_LIT = [2, 2, 5]
+
+
+def load_dot_table():
+    src = (Path(__file__).resolve().parents[3] / "core/interface/i2Deck/i2DotFont.cpp").read_text()
+    rows = re.findall(r"\{\s*(0x[0-9A-Fa-f]{2}),\s*(0x[0-9A-Fa-f]{2}),\s*(0x[0-9A-Fa-f]{2}),\s*(0x[0-9A-Fa-f]{2}),\s*(0x[0-9A-Fa-f]{2})\s*\}", src)
+    assert len(rows) == 64, len(rows)
+    return [[int(v, 16) for v in r] for r in rows]
+
+
+DOT = load_dot_table()
 
 FONT_CACHE = {}
 
@@ -92,6 +106,26 @@ def render(txt_path, png_path):
                 y -= FONTS.get(fid, FONTS[0])[2] / 2
             c = rgb(col, alpha)
             draw_prim(lambda d: d.text((x, y), text, font=f, fill=c))
+        elif k == "D":
+            head, text = raw[2:].split("|", 1)
+            x, y, size, align, n = map(int, head.split())
+            pitch, lit = DOT_PITCH[size], DOT_LIT[size]
+            w = len(text) * 6 * pitch
+            if align & 1:
+                x -= w // 2
+            elif align & 2:
+                x -= w
+            c = rgb(col, alpha)
+            def dots(d, x=x, y=y, text=text, pitch=pitch, lit=lit, c=c):
+                for i, ch in enumerate(text.upper()):
+                    o = ord(ch)
+                    cols = DOT[o - 32] if 32 <= o < 96 else DOT[0]
+                    for cx in range(5):
+                        for cy in range(7):
+                            if cols[cx] >> cy & 1:
+                                px, py = x + i * 6 * pitch + cx * pitch, y + cy * pitch
+                                d.rectangle([px, py, px + lit - 1, py + lit - 1], fill=c)
+            draw_prim(dots)
         elif k == "S":
             clip = tuple(map(int, raw[2:].split()))
         elif k == "U":
@@ -105,16 +139,6 @@ def render(txt_path, png_path):
             name = raw[2:].strip()
 
     d = ImageDraw.Draw(img)
-    # mock Tracker title bar and screen-button label row
-    d.rectangle([0, 0, W - 1, 27], fill=(40, 40, 44, 255))
-    d.text((10, 6), "i2 Arcade - " + name, font=font(2), fill=(230, 230, 230, 255))
-    d.rectangle([0, 425, W - 1, 479], fill=(24, 24, 28, 255))
-    for i in range(8):
-        t = labels.get(i, "")
-        f = font(2)
-        cx = 100 * i + 50
-        d.rectangle([100 * i + 3, 430, 100 * i + 96, 474], outline=(70, 70, 80, 255))
-        d.text((cx - f.getlength(t) / 2, 444), t, font=f, fill=(220, 220, 220, 255))
     # pad strip
     for p, ch in enumerate(pads[:48]):
         r, c = divmod(p, 12)
@@ -128,4 +152,6 @@ def render(txt_path, png_path):
 if __name__ == "__main__":
     for p in sys.argv[1:]:
         src = Path(p)
+        if not src.read_text().startswith("# layer"):
+            continue
         render(src, src.with_suffix(".png"))
