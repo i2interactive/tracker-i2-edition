@@ -112,9 +112,9 @@ This step confirms your Tracker takes Community Edition before any i2 code is in
 | To do this | Press |
 |---|---|
 | Send a key | The pad in the same position as the key on screen |
-| Change what the jog wheel does | Screen buttons 1–7 (the job names are along the bottom of the screen) |
-| Turn the page | Screen button 8 |
-| Go back to the home screen | Shift + screen button 8 |
+| Change what the jog wheel does | The screen button under the job's name (bottom of the screen) |
+| Go back to the home screen | Screen button 8 (HOME), in every deck |
+| Turn the page (CUT) | Screen button 7 |
 | Add Shift to a key or wheel step | Hold Shift |
 | Open the normal Tracker | MUSIC on the home screen, or any Tracker button (Pattern, Song, Config...) |
 | Come back to i2 DECK | Config > i2 > Deck |

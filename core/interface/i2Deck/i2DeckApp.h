@@ -59,7 +59,7 @@ struct DialDef
 };
 
 constexpr uint8_t kPads = 48;
-constexpr uint8_t kDials = 7; // dial 8 is always PAGE
+constexpr uint8_t kDials = 7; // button 8 is always HOME; button 7 is PAGE in multi-page decks
 constexpr uint8_t kMaxPages = 4;
 constexpr uint8_t kHistory = 56; // signal samples kept for the STATIC scope
 

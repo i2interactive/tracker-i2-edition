@@ -29,11 +29,10 @@ Every deck uses the same layout:
 | Part of the screen | What it shows | What you press |
 |---|---|---|
 | **Key map** (bottom half) | The 48 pads as three 4x4 blocks, each key with a short code | The pad in the same position. Lit pads have a job; a held pad lights up on screen and its full name appears in the live band |
-| **Dial strip** (bottom edge) | Up to seven jobs for the jog wheel, plus PAGE | Screen buttons 1-7 pick the wheel's job. Button 8 turns the page |
+| **Dial strip** (bottom edge) | Jobs for the jog wheel, PAGE and HOME | Screen buttons pick the wheel's job. **Button 8 is HOME in every deck.** In a deck with pages, button 7 turns the page |
 | **Live band** (top) | The wheel's current job, the name of the last key pressed, and how far each dial has moved | |
 
 - **Shift** adds Shift to any pad or wheel step.
-- **Shift + button 8** goes back to the home screen.
 - **Play, the arrows, Delete, Copy and Insert** send Space, the arrow keys, Backspace, Copy and Paste in the keyboard decks.
 - **Any Tracker button** (Pattern, Song, Config...) opens that Tracker screen straight away. Come back with **Config > i2 > Deck**.
 - **Mac or Windows:** button 7 on the home screen. It swaps Cmd for Ctrl and Option for Alt, and is remembered.
@@ -46,7 +45,7 @@ Uses Premiere's **default shortcuts**, so nothing is imported into Premiere. Two
 
 - **EDIT:** shuttle (J K L), in/out marks, add edit, ripple delete, lift/extract, insert/overwrite, trims, nudge, tools, timeline navigation, markers, zoom, track height, render.
 - **CLIPS:** clipboard, group/link/enable, speed, gain, subclip, transitions, clip volume, import/export/save, and the panel shortcuts.
-- **Wheel:** frame step, 5-frame jump, cut to cut, zoom, marker to marker, clip volume, nudge.
+- **Wheel:** frame step, 5-frame jump, cut to cut, zoom, marker to marker, clip volume.
 
 ### GRADE: DaVinci Resolve
 
@@ -95,7 +94,7 @@ K -                            (leave a pad empty)
 DIAL 1 FRAME | RIGHT | LEFT    (wheel job: name | clockwise | anticlockwise)
 ```
 
-- Up to 4 pages, 16 keys per block, 7 dials per page. Codes are up to 4 characters, names up to 10.
+- Up to 4 pages, 16 keys per block, 7 dials per page (6 in a deck with more than one page, where button 7 turns the page). Codes are up to 4 characters, names up to 10.
 - **Modifiers:** `CMD` (Cmd on Mac, Ctrl on Windows), `CTRL`, `SHIFT`, `OPT` or `ALT`, `WIN`.
 - **Keys:** A-Z, 0-9, F1-F24, SPACE, ENTER, ESC, TAB, BKSP, DEL, INS, HOME, END, PGUP, PGDN, UP, DOWN, LEFT, RIGHT, BACKSLASH, the symbols `- = [ ] ; ' , . /` and the grave accent, and the number pad as KP0-KP9, KPPLUS, KPMINUS, KPENTER.
 

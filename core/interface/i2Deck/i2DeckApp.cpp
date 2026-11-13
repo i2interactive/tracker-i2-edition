@@ -596,8 +596,12 @@ void DeckApp::button(Button b, bool down)
         }
         if (screen == 7)
         {
-            if (shift || deck().pageCount <= 1) goHome();
-            else setPage((uint8_t)((pageIndex + 1) % deck().pageCount));
+            goHome(); // button 8 is HOME in every deck
+            return;
+        }
+        if (screen == 6 && deck().pageCount > 1)
+        {
+            setPage((uint8_t)((pageIndex + 1) % deck().pageCount)); // button 7 turns the page
             return;
         }
         if (page().dials[screen].used())
@@ -794,16 +798,13 @@ void DeckApp::drawChrome(Gfx& g)
         }
         else if (i == 7)
         {
-            if (deck().pageCount > 1)
-            {
-                snprintf(nameBuf, sizeof(nameBuf), "PAGE");
-                snprintf(value, sizeof(value), "%d/%d", pageIndex + 1, deck().pageCount);
-            }
-            else
-            {
-                snprintf(nameBuf, sizeof(nameBuf), "BACK");
-                snprintf(value, sizeof(value), "HOME");
-            }
+            snprintf(nameBuf, sizeof(nameBuf), "BACK");
+            snprintf(value, sizeof(value), "HOME");
+        }
+        else if (i == 6 && deck().pageCount > 1)
+        {
+            snprintf(nameBuf, sizeof(nameBuf), "PAGE");
+            snprintf(value, sizeof(value), "%d/%d", pageIndex + 1, deck().pageCount);
         }
         else
         {

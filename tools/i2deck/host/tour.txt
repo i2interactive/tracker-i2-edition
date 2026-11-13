@@ -29,13 +29,11 @@ pad 0
 jog 2
 shift 0
 expectheld 0
-screen 8
+screen 7
 wait 2
 shot 05_cut_clips
 allpads
-shift 1
 screen 8
-shift 0
 wait 2
 # GRADE
 screen 2

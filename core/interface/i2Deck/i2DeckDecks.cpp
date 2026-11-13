@@ -15,7 +15,10 @@
 //                          row first. "K -" leaves a pad empty.
 //                          CMD = Cmd on Mac / Ctrl on Windows. OPT = Option / Alt.
 //   DIAL <1-7> <name> | <clockwise combo> | <anticlockwise combo>
-//                          a job for the jog wheel (screen buttons 1-7 pick it)
+//                          a job for the jog wheel (screen buttons 1-7 pick it).
+//                          Screen button 8 is always HOME. In a deck with more
+//                          than one page, button 7 turns the page, so use
+//                          dials 1-6 there.
 
 namespace i2deck
 {
@@ -85,7 +88,6 @@ DIAL 3 CUTS    | DOWN | UP
 DIAL 4 ZOOM    | = | -
 DIAL 5 MARKERS | SHIFT+M | CMD+SHIFT+M
 DIAL 6 VOLUME  | ] | [
-DIAL 7 NUDGE   | OPT+RIGHT | OPT+LEFT
 
 PAGE CLIPS
 BLOCK 1 CLIPS
@@ -137,7 +139,6 @@ DIAL 3 CUTS    | DOWN | UP
 DIAL 4 ZOOM    | = | -
 DIAL 5 MARKERS | SHIFT+M | CMD+SHIFT+M
 DIAL 6 VOLUME  | ] | [
-DIAL 7 NUDGE   | OPT+RIGHT | OPT+LEFT
 )DECK";
 
 const char kGrade[] = R"DECK(# i2 DECK - GRADE: DaVinci Resolve colour page, default keyboard shortcuts.
