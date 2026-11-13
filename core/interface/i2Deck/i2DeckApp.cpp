@@ -763,7 +763,7 @@ void DeckApp::drawChrome(Gfx& g)
     const char* app = home ? "Tracker i2 edition" : deck().app;
 
     g.color(accent);
-    g.dot(12, 8, 1, kLeft, "I2");
+    g.dot(12, 8, 1, kLeft, "i2");
     g.color(kInk);
     g.dot(58, 8, 1, kLeft, title);
     g.color(kGrey);

@@ -174,14 +174,16 @@ int16_t Ft812Gfx::fontHeight(uint8_t font)
 void Ft812Gfx::dot(int16_t x, int16_t y, uint8_t size, uint8_t align, const char* s, int len)
 {
     if (s == nullptr || *s == 0 || size >= i2dot::kSizes) return;
-    // The dot fonts hold ASCII 32-95 only: fold lower case, blank the rest.
+    // The dot fonts hold ASCII 32-95 only: fold lower case (except the small
+    // i), blank the rest.
     char buf[32];
     int n = len > 0 ? len : (int)strlen(s);
     if (n > (int)sizeof(buf) - 1) n = (int)sizeof(buf) - 1;
     for (int i = 0; i < n; i++)
     {
         char c = s[i];
-        if (c >= 'a' && c <= 'z') c = (char)(c - 'a' + 'A');
+        if (c == 'i') c = i2dot::kLowerISlot; // "i2" keeps its small i
+        else if (c >= 'a' && c <= 'z') c = (char)(c - 'a' + 'A');
         buf[i] = (c >= 32 && c <= 95) ? c : ' ';
     }
     buf[n] = 0;

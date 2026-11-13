@@ -16,11 +16,12 @@ DOT_LIT = [2, 2, 5]
 def load_dot_table():
     src = (Path(__file__).resolve().parents[3] / "core/interface/i2Deck/i2DotFont.cpp").read_text()
     rows = re.findall(r"\{\s*(0x[0-9A-Fa-f]{2}),\s*(0x[0-9A-Fa-f]{2}),\s*(0x[0-9A-Fa-f]{2}),\s*(0x[0-9A-Fa-f]{2}),\s*(0x[0-9A-Fa-f]{2})\s*\}", src)
-    assert len(rows) == 64, len(rows)
-    return [[int(v, 16) for v in r] for r in rows]
+    assert len(rows) >= 64, len(rows)
+    return [[int(v, 16) for v in r] for r in rows[:64]]
 
 
 DOT = load_dot_table()
+LOWER_I = [0x00, 0x44, 0x7D, 0x40, 0x00]
 
 FONT_CACHE = {}
 
@@ -117,9 +118,11 @@ def render(txt_path, png_path):
                 x -= w
             c = rgb(col, alpha)
             def dots(d, x=x, y=y, text=text, pitch=pitch, lit=lit, c=c):
-                for i, ch in enumerate(text.upper()):
-                    o = ord(ch)
+                for i, ch in enumerate(text):
+                    o = ord(ch.upper())
                     cols = DOT[o - 32] if 32 <= o < 96 else DOT[0]
+                    if ch == "i":  # "i2" keeps its small i
+                        cols = LOWER_I
                     for cx in range(5):
                         for cy in range(7):
                             if cols[cx] >> cy & 1:

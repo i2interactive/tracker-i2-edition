@@ -23,8 +23,13 @@ inline uint8_t cellW(uint8_t size) { return (uint8_t)(6 * kPitch[size]); }
 inline uint8_t cellH(uint8_t size) { return (uint8_t)(7 * kPitch[size]); }
 inline uint8_t stride(uint8_t size) { return (uint8_t)((cellW(size) + 7) / 8); }
 
-// Column data for a character (5 bytes, bit 0 = top row). Lower case maps to
-// upper case; anything outside the table is a space.
+// "i2" is always lower case, so the face has one lower-case letter: a small
+// i. In the chip fonts it lives in the '^' slot.
+constexpr char kLowerISlot = '^';
+
+// Column data for a character (5 bytes, bit 0 = top row). A small i stays
+// small; other lower case maps to upper case; anything outside the table is
+// a space.
 const uint8_t* columns(char c);
 
 // Renders one glyph as a 1-bit bitmap (MSB = leftmost pixel) into `out`,

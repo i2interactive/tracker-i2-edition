@@ -76,8 +76,15 @@ const uint8_t kFont[kGlyphs][5] = {
 };
 } // namespace
 
+// The one lower-case letter: "i2" is always written with a small i.
+const uint8_t kLowerI[5] = { 0x00, 0x44, 0x7D, 0x40, 0x00 };
+
 const uint8_t* columns(char c)
 {
+    if (c == 'i' || c == kLowerISlot)
+    {
+        return kLowerI;
+    }
     if (c >= 'a' && c <= 'z')
     {
         c = (char)(c - 'a' + 'A');

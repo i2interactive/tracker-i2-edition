@@ -66,7 +66,7 @@ class Gfx
     virtual int16_t textWidth(uint8_t font, const char* s, int len = -1) = 0;
     virtual int16_t fontHeight(uint8_t font) = 0;
     // Dot-matrix text in i2's 5x7 face. size 0 small, 1 medium, 2 large.
-    // Upper case only (lower case is drawn as upper).
+    // Upper case, plus a small i for "i2" (other lower case is drawn as upper).
     virtual void dot(int16_t x, int16_t y, uint8_t size, uint8_t align, const char* s, int len = 0) = 0;
     // Clip drawing to a rectangle (until the next clip / unclip).
     virtual void clip(int16_t x, int16_t y, int16_t w, int16_t h) = 0;
