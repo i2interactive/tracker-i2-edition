@@ -14,6 +14,7 @@
 #include "i2Gfx.h"
 #include "i2Glitch.h"
 #include "i2Keys.h"
+#include "i2Mcu.h"
 
 namespace i2deck
 {
@@ -27,6 +28,7 @@ enum Link : uint8_t
     kLinkKeys,  // USB keyboard shortcuts
     kLinkMidi,  // USB MIDI notes and control changes
     kLinkRadio, // the built-in FM tuner
+    kLinkMcu,   // a Mackie Control surface over USB MIDI (keys too)
 };
 
 enum Action : uint8_t
@@ -49,6 +51,13 @@ enum Action : uint8_t
     kActAmount, // dial: the strength of the last effect touched
     kActLength, // dial: stutter length (beat division)
     kActVolume, // dial: how loud the radio is
+    // MIXER (Mackie Control)
+    kActMcu,    // arg = MCU note: press / release
+    kActFader,  // dial: the picked strip's fader
+    kActMaster, // dial: the master fader
+    kActPan,    // dial: the picked strip's V-Pot (pan)
+    kActStrip,  // dial: pick the strip (1-8) the wheel works on
+    kActJogMcu, // dial: the MCU jog wheel
 };
 
 // Glitch effects, in pad order
@@ -121,11 +130,16 @@ struct BuiltinDeck
     // A second app for the same deck (GRADE: Resolve / Premiere). Screen
     // button 6 switches between them; the choice is kept in settings.txt.
     const BuiltinDeck* alt;
+    // Which setting picks the side: 0 = grade= (GRADE), 1 = app= (MIXER,
+    // FILE and SETUP share it).
+    uint8_t pick;
 };
-constexpr uint8_t kBuiltinDecks = 4;
+// CUT, GRADE, HUB, STATIC, MIXER, FILE, SETUP
+constexpr uint8_t kBuiltinDecks = 7;
+constexpr uint8_t kHomeDecks = 4; // decks per home page
 extern const BuiltinDeck kBuiltin[kBuiltinDecks];
 // Every deck text the firmware carries, for the harness to check.
-constexpr uint8_t kAllDecks = 5;
+constexpr uint8_t kAllDecks = 11;
 extern const BuiltinDeck* const kAll[kAllDecks];
 
 // Hardware the decks drive. Implemented by the firmware and by the host.
@@ -139,6 +153,10 @@ class DeckIo
     virtual void keysOff() = 0;
     virtual void midiNote(uint8_t note, bool on, uint8_t channel) = 0;
     virtual void midiCc(uint8_t cc, uint8_t value, uint8_t channel) = 0;
+    // Any channel message (status byte with channel), and a whole sysex
+    // message including F0 and F7. Used by MIXER's Mackie Control.
+    virtual void midiShort(uint8_t status, uint8_t d1, uint8_t d2) = 0;
+    virtual void midiSysex(const uint8_t* data, uint16_t length) = 0;
     virtual void radioPower(bool on) = 0;
     virtual void radioTune(float mhz) = 0;
     virtual void radioSeek(bool up) = 0;
@@ -173,6 +191,8 @@ class DeckApp final : public i2arc::Game
     virtual void pad(uint8_t pad, bool down) override;
     virtual void button(Button b, bool down) override;
     virtual void jog(int16_t steps) override;
+    virtual void midiIn(uint8_t status, uint8_t d1, uint8_t d2) override;
+    virtual void sysexIn(const uint8_t* data, uint16_t length) override;
 
     // Start-up settings: boot=music asks to start in the Tracker; lock=off
     // turns the lock off. Defaults: start in i2 DECK, locked.
@@ -180,6 +200,10 @@ class DeckApp final : public i2arc::Game
 
     bool locked() const { return lockSetting && !unlocked; }
     int8_t openDeckIndex() const { return home ? -1 : deckIndex; }
+    uint8_t homePageIndex() const { return homePage; }
+    // MIXER state, for the harness
+    uint16_t faderPos(uint8_t strip) const { return strip <= i2mcu::kMasterChannel ? fader[strip] : 0; }
+    bool mcuLed(uint8_t note) const { return note < 128 && (leds[note >> 3] & (1u << (note & 7))); }
     // A locked Tracker screen was asked for: say so.
     void flashLocked();
 
@@ -197,6 +221,13 @@ class DeckApp final : public i2arc::Game
     void openDeck(uint8_t index);
     const BuiltinDeck& source(uint8_t index) const;
     bool hasAlt() const { return !home && deckIndex >= 0 && kBuiltin[deckIndex].alt != nullptr; }
+    uint8_t sideOf(uint8_t index) const { return kBuiltin[index].pick ? appSide : gradeSide; }
+    // MIXER
+    bool mcu() const { return !home && deck().link == kLinkMcu; }
+    void mcuButton(uint8_t note, bool down);
+    void mcuFader(uint8_t strip, int steps);
+    void mcuRelease();
+    void drawStrips(Gfx& g);
     void flash(const char* text);
     void comboHeld(bool both);
     void comboCheck();
@@ -241,6 +272,7 @@ class DeckApp final : public i2arc::Game
     bool mac = true;
     bool shift = false;
     uint64_t held = 0;
+    uint64_t keyHeld = 0; // pads holding a key down
     uint8_t heldKey[kPads] = {};
     uint8_t passKey[8] = {};
     char last[24] = "";
@@ -253,6 +285,8 @@ class DeckApp final : public i2arc::Game
     bool lockSetting = true;
     bool unlocked = false; // the secret combo, until restart
     uint8_t gradeSide = 0; // 0 = first app, 1 = alt
+    uint8_t appSide = 1;   // MIXER / FILE / SETUP: 0 = Resolve, 1 = Premiere
+    uint8_t homePage = 0;  // home screen: 0 = CUT..STATIC, 1 = MIXER..SETUP
     bool recHeld = false;
     bool comboDown = false;  // Shift + Rec both held
     bool comboFired = false; // already toggled during this hold
@@ -286,6 +320,22 @@ class DeckApp final : public i2arc::Game
     uint32_t nextHop = 0, nextBurst = 0, settleUntil = 0;
     bool burst = false;
     i2glitch::Params sent;
+
+    // MIXER (Mackie Control): what the host told us, and what we hold
+    uint8_t leds[16] = {};                         // LED per MCU note
+    uint16_t fader[i2mcu::kStrips + 1] = {};       // strips 1-8, master
+    uint16_t faderKnown = 0;                       // host sent a position
+    uint8_t meter[i2mcu::kStrips] = {};            // 0-12
+    uint8_t ring[i2mcu::kStrips] = {};             // V-Pot ring, 0 = unknown
+    uint32_t meterAt = 0;
+    char lcd[i2mcu::kLcdChars] = {};
+    uint32_t hostAt = 0;                           // last MIDI from the host
+    bool hostSeen = false;
+    uint8_t strip = 0;                             // the wheel's strip, 0-7
+    int8_t bank = 0;                               // banks moved (estimate)
+    int8_t touching = -1;                          // fader held by the wheel
+    uint32_t touchUntil = 0;
+    bool warnedFader = false;
 };
 
 } // namespace i2deck

@@ -94,7 +94,26 @@ const ActName kActs[] = {
     { "@R16", kActRepeat, 3 }, { "@R32", kActRepeat, 4 }, { "@R64", kActRepeat, 5 },
     { "@RSSI", kActRssi, 0 },  { "@MON", kActMon, 0 },    { "@KILL", kActKill, 0 },
     { "@AMOUNT", kActAmount, 0 }, { "@LENGTH", kActLength, 0 }, { "@VOLUME", kActVolume, 0 },
+    // MIXER: wheel jobs
+    { "@FADER", kActFader, 0 }, { "@MASTER", kActMaster, 0 }, { "@PAN", kActPan, 0 },
+    { "@STRIP", kActStrip, 0 }, { "@JOG", kActJogMcu, 0 },
+    // MIXER: Mackie Control buttons (strip buttons are @REC1-8, @SOLO1-8,
+    // @MUTE1-8, @SEL1-8; any other MCU note is @N<number>)
+    { "@BANK-", kActMcu, 0x2E },  { "@BANK+", kActMcu, 0x2F },  { "@CH-", kActMcu, 0x30 },
+    { "@CH+", kActMcu, 0x31 },    { "@FLIP", kActMcu, 0x32 },   { "@READ", kActMcu, 0x4A },
+    { "@WRITE", kActMcu, 0x4B },  { "@TOUCH", kActMcu, 0x4D },  { "@LATCH", kActMcu, 0x4E },
+    { "@SAVE", kActMcu, 0x50 },   { "@UNDO", kActMcu, 0x51 },   { "@MARKER", kActMcu, 0x54 },
+    { "@NUDGE", kActMcu, 0x55 },  { "@CYCLE", kActMcu, 0x56 },  { "@REW", kActMcu, 0x5B },
+    { "@FF", kActMcu, 0x5C },     { "@STOP", kActMcu, 0x5D },   { "@PLAY", kActMcu, 0x5E },
+    { "@RECORD", kActMcu, 0x5F },
 };
+
+struct StripName
+{
+    const char* name;
+    uint8_t base;
+};
+const StripName kStripNames[] = { { "@REC", i2mcu::kRec }, { "@SOLO", i2mcu::kSolo }, { "@MUTE", i2mcu::kMute }, { "@SEL", i2mcu::kSelect } };
 
 const char* const kFxNames[kFxCount] = { "STUTTER", "CRUSH", "TAPE STOP", "SCAN", "FILTER", "FREEZE" };
 // stutter lengths as note values (1/4 = one beat at the project tempo)
@@ -103,20 +122,52 @@ const char* const kDivNames[kDivisions] = { "1/2", "1/4", "1/8", "1/16", "1/32",
 // Unlock: hold Shift + Rec together for 2 seconds (in i2 DECK).
 constexpr uint32_t kComboMs = 2000;
 
+bool sameWord(const char* s, const char* e, const char* word)
+{
+    size_t n = strlen(word);
+    if ((size_t)(e - s) != n) return false;
+    for (size_t i = 0; i < n; i++)
+    {
+        if (up(s[i]) != word[i]) return false;
+    }
+    return true;
+}
+
 bool parseAct(const char* s, const char* e, uint8_t& act, uint8_t& arg)
 {
     for (const ActName& a : kActs)
     {
-        size_t n = strlen(a.name);
-        if ((size_t)(e - s) != n) continue;
-        bool same = true;
-        for (size_t i = 0; i < n; i++) same = same && up(s[i]) == a.name[i];
-        if (same)
+        if (sameWord(s, e, a.name))
         {
             act = a.act;
             arg = a.arg;
             return true;
         }
+    }
+    // @REC1 .. @SEL8: a strip button
+    for (const StripName& sn : kStripNames)
+    {
+        size_t n = strlen(sn.name);
+        if ((size_t)(e - s) == n + 1 && sameWord(s, s + n, sn.name) && s[n] >= '1' && s[n] <= '8')
+        {
+            act = kActMcu;
+            arg = (uint8_t)(sn.base + (s[n] - '1'));
+            return true;
+        }
+    }
+    // @N<0-127>: any Mackie Control note
+    if (e - s >= 3 && e - s <= 5 && up(s[1]) == 'N')
+    {
+        int v = 0;
+        for (const char* q = s + 2; q < e; q++)
+        {
+            if (*q < '0' || *q > '9') return false;
+            v = v * 10 + (*q - '0');
+        }
+        if (v > 127) return false;
+        act = kActMcu;
+        arg = (uint8_t)v;
+        return true;
     }
     return false;
 }
@@ -189,7 +240,7 @@ int parseDeck(const char* text, size_t length, Deck& out)
         {
             const char* v = s + 4;
             trim(v, e);
-            out.link = startsWord(v, e, "MIDI") ? kLinkMidi : startsWord(v, e, "RADIO") ? kLinkRadio : kLinkKeys;
+            out.link = startsWord(v, e, "MIDI") ? kLinkMidi : startsWord(v, e, "RADIO") ? kLinkRadio : startsWord(v, e, "MCU") ? kLinkMcu : kLinkKeys;
         }
         else if (startsWord(s, e, "REV"))
         {
@@ -358,6 +409,7 @@ void DeckApp::loadSettings()
     if (settingIs(buf, "os", "win")) mac = false;
     if (settingIs(buf, "os", "mac")) mac = true;
     gradeSide = settingIs(buf, "grade", "premiere") ? 1 : 0;
+    appSide = settingIs(buf, "app", "resolve") ? 0 : 1;
     if (setting(buf, "freq", v))
     {
         long f = strtol(v, nullptr, 10);
@@ -382,9 +434,9 @@ void DeckApp::loadSettings()
 void DeckApp::saveSettings()
 {
     char buf[kSettingsCap];
-    int n = snprintf(buf, sizeof(buf), "os=%s\nboot=%s\nlock=%s\ngrade=%s\nfreq=%d\nvol=%d\n", mac ? "mac" : "win",
+    int n = snprintf(buf, sizeof(buf), "os=%s\nboot=%s\nlock=%s\ngrade=%s\napp=%s\nfreq=%d\nvol=%d\n", mac ? "mac" : "win",
                      bootMusic ? "music" : "deck", lockSetting ? "on" : "off", gradeSide ? "premiere" : "resolve",
-                     (int)(freq * 10 + 0.5f), volume);
+                     appSide ? "premiere" : "resolve", (int)(freq * 10 + 0.5f), volume);
     for (int i = 0; i < 8 && n > 0 && n < (int)sizeof(buf) - 12; i++)
     {
         n += snprintf(buf + n, sizeof(buf) - (size_t)n, "p%d=%d\n", i + 1, (int)(presets[i] * 10 + 0.5f));
@@ -402,8 +454,11 @@ void DeckApp::begin(Services& services)
     uint8_t* mem = sv->scratch(size);
     deckPtr = reinterpret_cast<Deck*>(mem + kDeckOffset);
     home = true;
+    homePage = 0;
     deckIndex = -1;
     held = 0;
+    keyHeld = 0;
+    touching = -1;
     shift = false;
     recHeld = false;
     last[0] = 0;
@@ -441,14 +496,19 @@ void DeckApp::end()
 void DeckApp::releaseAll()
 {
     if (io) io->keysOff();
-    if (io && !home && deckPtr && deck().link == kLinkMidi)
+    if (io && !home && deckPtr)
     {
         for (uint8_t p = 0; p < kPads; p++)
         {
-            if (held & (1ULL << p)) io->midiNote(p, false, (uint8_t)(pageIndex + 1));
+            if (!(held & (1ULL << p))) continue;
+            const PadDef& d = page().pads[p];
+            if (d.act == kActMcu) io->midiShort(0x90, d.arg, 0);
+            else if (d.act == kActNone && !(keyHeld & (1ULL << p)) && deck().link == kLinkMidi) io->midiNote(p, false, (uint8_t)(pageIndex + 1));
         }
     }
+    mcuRelease();
     held = 0;
+    keyHeld = 0;
     memset(passKey, 0, sizeof(passKey));
     // momentary glitches end with their pads
     bool hadFx = repeatHeld != 0;
@@ -469,6 +529,7 @@ void DeckApp::goHome()
 {
     releaseAll();
     radioOff();
+    if (!home && deckIndex >= 0) homePage = deckIndex >= kHomeDecks ? 1 : 0;
     home = true;
     dirtyMask = 0x3F;
     lightPads();
@@ -477,7 +538,7 @@ void DeckApp::goHome()
 const BuiltinDeck& DeckApp::source(uint8_t index) const
 {
     const BuiltinDeck& b = kBuiltin[index];
-    return (gradeSide && b.alt) ? *b.alt : b;
+    return (sideOf(index) && b.alt) ? *b.alt : b;
 }
 
 void DeckApp::openDeck(uint8_t index)
@@ -577,6 +638,7 @@ bool DeckApp::padOn(uint8_t p) const
         case kActRssi: return rssiMod;
         case kActMon: return monOn;
         case kActSend: return sending;
+        case kActMcu: return mcuLed(d.arg);
         default: return false;
     }
 }
@@ -856,19 +918,22 @@ void DeckApp::pad(uint8_t padIndex, bool down)
     {
         if (held & (1ULL << padIndex)) return; // already down
         held |= 1ULL << padIndex;
-        if (d.act != kActNone)
+        i2ctl::KeyCombo c = mac ? d.mac : d.win;
+        if (d.act == kActMcu)
+        {
+            mcuButton(d.arg, true);
+        }
+        else if (d.act != kActNone)
         {
             runAction(d.act, d.arg);
         }
-        else if (deck().link == kLinkKeys)
+        else if (!c.isEmpty())
         {
-            i2ctl::KeyCombo c = mac ? d.mac : d.win;
-            if (!c.isEmpty())
-            {
-                if (shift) c.mods |= i2ctl::kModShift;
-                io->keyDown(c.key, c.mods);
-                heldKey[padIndex] = c.key;
-            }
+            // a keyboard shortcut (KEYS decks, and the key pads in MIXER)
+            if (shift) c.mods |= i2ctl::kModShift;
+            io->keyDown(c.key, c.mods);
+            heldKey[padIndex] = c.key;
+            keyHeld |= 1ULL << padIndex;
         }
         else if (deck().link == kLinkMidi)
         {
@@ -885,8 +950,13 @@ void DeckApp::pad(uint8_t padIndex, bool down)
         {
             glitchAction(d.act, d.arg, false);
         }
-        else if (d.act == kActNone && deck().link == kLinkKeys)
+        else if (d.act == kActMcu)
         {
+            mcuButton(d.arg, false);
+        }
+        else if (keyHeld & (1ULL << padIndex))
+        {
+            keyHeld &= ~(1ULL << padIndex);
             io->keyUp(heldKey[padIndex]);
         }
         else if (d.act == kActNone && deck().link == kLinkMidi)
@@ -916,7 +986,8 @@ void DeckApp::button(Button b, bool down)
     int hotkey = (int)b - (int)Button::Deck0;
     if (hotkey >= 0 && hotkey < kBuiltinDecks)
     {
-        // NOTE / INSTRUMENT / FX1 / FX2: straight to CUT / GRADE / HUB / STATIC
+        // NOTE / INSTRUMENT / FX1 / FX2 / MASTER / FILE / CONFIG: straight to
+        // CUT / GRADE / HUB / STATIC / MIXER / FILE / SETUP
         if (!down || (shift && recHeld)) return;
         if (!home && deckIndex == hotkey) return; // already there
         if (!home) goHome();
@@ -931,12 +1002,19 @@ void DeckApp::button(Button b, bool down)
         if (shift && recHeld) return; // holding the unlock combo: screen buttons do nothing
         if (home)
         {
-            if (screen < kBuiltinDecks) openDeck((uint8_t)screen);
+            // two pages of decks: 1-4 CUT GRADE HUB STATIC, then 1-3 MIXER FILE SETUP
+            int index = homePage * kHomeDecks + screen;
+            if (screen < kHomeDecks && index < kBuiltinDecks) openDeck((uint8_t)index);
             else if (screen == 4 && io) io->leave(0);
             else if (screen == 6)
             {
                 mac = !mac;
                 saveSettings();
+                dirtyMask = 0x3F;
+            }
+            else if (screen == 7)
+            {
+                homePage = homePage ? 0 : 1; // button 8: the other home page
                 dirtyMask = 0x3F;
             }
             return;
@@ -948,8 +1026,10 @@ void DeckApp::button(Button b, bool down)
         }
         if (screen == 5 && hasAlt())
         {
-            // button 6 switches the deck's app (GRADE: Resolve / Premiere)
-            gradeSide = gradeSide ? 0 : 1;
+            // button 6 switches the deck's app (Resolve / Premiere). GRADE has
+            // its own choice; MIXER, FILE and SETUP share one.
+            if (kBuiltin[deckIndex].pick) appSide = appSide ? 0 : 1;
+            else gradeSide = gradeSide ? 0 : 1;
             saveSettings();
             openDeck((uint8_t)deckIndex);
             flash(source((uint8_t)deckIndex).app);
@@ -968,8 +1048,9 @@ void DeckApp::button(Button b, bool down)
         return;
     }
 
-    // The Tracker's own buttons keep their printed meaning in keyboard decks.
-    if (home || !io || deck().link != kLinkKeys) return;
+    // The Tracker's own buttons keep their printed meaning in keyboard decks
+    // (and in MIXER).
+    if (home || !io || (deck().link != kLinkKeys && deck().link != kLinkMcu)) return;
     i2ctl::KeyCombo c{};
     uint8_t slot = 0;
     const uint8_t cmd = mac ? i2ctl::kModGui : i2ctl::kModCtrl;
@@ -1050,7 +1131,30 @@ void DeckApp::jog(int16_t steps)
         volume = (uint8_t)(v < 0 ? 0 : v > 100 ? 100 : v);
         monitor();
     }
-    else if (deck().link == kLinkKeys)
+    else if (d.act == kActFader || d.act == kActMaster)
+    {
+        mcuFader(d.act == kActMaster ? i2mcu::kMasterChannel : strip, cw ? n : -n);
+    }
+    else if (d.act == kActPan)
+    {
+        io->midiShort(0xB0, (uint8_t)(i2mcu::kVpot + strip), i2mcu::relative(cw ? n : -n));
+    }
+    else if (d.act == kActJogMcu)
+    {
+        io->midiShort(0xB0, i2mcu::kJog, i2mcu::relative(cw ? n : -n));
+    }
+    else if (d.act == kActStrip)
+    {
+        int v = strip + (cw ? 1 : -1);
+        if (v >= 0 && v < i2mcu::kStrips)
+        {
+            mcuRelease();
+            strip = (uint8_t)v;
+        }
+        dirtyMask |= 1u << kLayerChrome | 1u << kLayerLive;
+        return;
+    }
+    else if (!(mac ? d.cwMac : d.cwWin).isEmpty() || !(mac ? d.ccwMac : d.ccwWin).isEmpty())
     {
         i2ctl::KeyCombo c = mac ? (cw ? d.cwMac : d.ccwMac) : (cw ? d.cwWin : d.ccwWin);
         if (shift) c.mods |= i2ctl::kModShift;
@@ -1078,6 +1182,23 @@ void DeckApp::tick(uint32_t now)
     {
         flashText[0] = 0;
         dirtyMask |= 1u << kLayerLive;
+    }
+    // MIXER: let go of the fader 400 ms after the wheel stops; meters fall
+    // one step every 120 ms between the host's updates (as on an MCU)
+    if (touching >= 0 && (int32_t)(now - touchUntil) >= 0) mcuRelease();
+    if (now - meterAt >= 120)
+    {
+        meterAt = now;
+        bool any = false;
+        for (uint8_t& m : meter)
+        {
+            if (m)
+            {
+                m--;
+                any = true;
+            }
+        }
+        if (any && mcu()) dirtyMask |= 1u << kLayerLive;
     }
     if (!radioOn || !io) return;
     io->radioPoll();
@@ -1138,6 +1259,135 @@ void DeckApp::tick(uint32_t now)
     }
     if (rssiMod) pushGlitch();
     dirtyMask |= 1u << kLayerLive;
+}
+
+//==============================================================================================================
+// MIXER: Mackie Control over USB MIDI
+//==============================================================================================================
+void DeckApp::mcuButton(uint8_t note, bool down)
+{
+    if (!io) return;
+    io->midiShort(0x90, note, down ? 0x7F : 0x00);
+    if (down && note >= i2mcu::kRec && note < i2mcu::kSelect + i2mcu::kStrips)
+    {
+        // a strip button also picks that strip for the wheel
+        uint8_t s = (uint8_t)(note & 7);
+        if (s != strip) mcuRelease();
+        strip = s;
+        dirtyMask |= 1u << kLayerChrome;
+    }
+    if (down && (note == i2mcu::kBankLeft || note == i2mcu::kBankRight))
+    {
+        int v = bank + (note == i2mcu::kBankRight ? 1 : -1);
+        bank = (int8_t)(v < 0 ? 0 : v > 15 ? 15 : v);
+    }
+    dirtyMask |= 1u << kLayerLive;
+}
+
+// Moves a fader like a hand on a motor fader: touch, move, let go 400 ms
+// after the last step. 128 steps from bottom to top (Shift: 16).
+void DeckApp::mcuFader(uint8_t s, int steps)
+{
+    if (!io || s > i2mcu::kMasterChannel) return;
+    if (!(faderKnown & (1u << s)) && !warnedFader)
+    {
+        warnedFader = true;
+        flash("NO FADER FROM HOST: FROM 0");
+    }
+    if (touching != (int8_t)s)
+    {
+        mcuRelease();
+        touching = (int8_t)s;
+        io->midiShort(0x90, (uint8_t)(s == i2mcu::kMasterChannel ? i2mcu::kMasterTouch : i2mcu::kTouch + s), 0x7F);
+    }
+    int v = fader[s] + steps * (shift ? 1024 : 128);
+    fader[s] = (uint16_t)(v < 0 ? 0 : v > i2mcu::kFaderMax ? i2mcu::kFaderMax : v);
+    faderKnown |= (uint16_t)(1u << s);
+    uint8_t m[3];
+    i2mcu::fader(fader[s], s, m);
+    io->midiShort(m[0], m[1], m[2]);
+    touchUntil = nowMs + 400;
+}
+
+void DeckApp::mcuRelease()
+{
+    if (touching < 0) return;
+    if (io) io->midiShort(0x90, (uint8_t)(touching == i2mcu::kMasterChannel ? i2mcu::kMasterTouch : i2mcu::kTouch + touching), 0x00);
+    touching = -1;
+}
+
+void DeckApp::midiIn(uint8_t status, uint8_t d1, uint8_t d2)
+{
+    uint8_t type = status & 0xF0, ch = status & 0x0F;
+    bool seen = true;
+    if ((type == 0x90 || type == 0x80) && ch == 0 && d1 < 128)
+    {
+        // button LEDs: 127 on, 1 blinking (shown on), 0 off
+        bool on = type == 0x90 && d2 > 0;
+        if (on) leds[d1 >> 3] |= (uint8_t)(1u << (d1 & 7));
+        else leds[d1 >> 3] &= (uint8_t)~(1u << (d1 & 7));
+        if (mcu())
+        {
+            lightPads();
+            dirtyMask |= 1u << kLayerBlockA | 1u << kLayerBlockB | 1u << kLayerBlockC;
+        }
+    }
+    else if (type == 0xE0 && ch <= i2mcu::kMasterChannel)
+    {
+        // the host moves a fader (ignored while the wheel holds it)
+        if (touching != (int8_t)ch)
+        {
+            fader[ch] = (uint16_t)(d1 | (d2 << 7));
+            faderKnown |= (uint16_t)(1u << ch);
+        }
+    }
+    else if (type == 0xD0)
+    {
+        uint8_t s = d1 >> 4, lv = d1 & 0x0F;
+        if (s < i2mcu::kStrips && lv <= i2mcu::kMeterMax) meter[s] = lv;
+    }
+    else if (type == 0xB0 && ch == 0 && d1 >= i2mcu::kVpotRing && d1 < i2mcu::kVpotRing + i2mcu::kStrips)
+    {
+        ring[d1 - i2mcu::kVpotRing] = (uint8_t)(d2 | 0x80); // 0x80 = known
+    }
+    else
+    {
+        seen = false;
+    }
+    if (seen)
+    {
+        if (!hostSeen) dirtyMask |= 1u << kLayerChrome;
+        hostSeen = true;
+        hostAt = nowMs;
+        if (mcu()) dirtyMask |= 1u << kLayerLive;
+    }
+}
+
+void DeckApp::sysexIn(const uint8_t* d, uint16_t n)
+{
+    if (!i2mcu::ours(d, n)) return;
+    uint8_t out[20];
+    uint16_t k = i2mcu::reply(d, n, out);
+    if (k && io) io->midiSysex(out, k);
+    if (d[5] == 0x12 && n >= 8)
+    {
+        // the display: offset, then characters, then F7
+        uint16_t at = d[6];
+        for (uint16_t i = 7; i + 1 < n && at < i2mcu::kLcdChars; i++, at++)
+        {
+            char c = (char)d[i];
+            lcd[at] = (c >= 32 && c < 127) ? c : ' ';
+        }
+    }
+    else if (d[5] == 0x62 || d[5] == 0x63)
+    {
+        memset(leds, 0, sizeof(leds)); // all LEDs off / reset
+        if (mcu()) lightPads();
+    }
+    if (!hostSeen) dirtyMask |= 1u << kLayerChrome;
+    hostSeen = true;
+    hostAt = nowMs;
+    if (mcu()) dirtyMask |= 1u << kLayerLive;
 }
 
 //==============================================================================================================
@@ -1206,6 +1456,24 @@ void DeckApp::dialValue(uint8_t i, char* out, size_t cap) const
     {
         snprintf(out, cap, "%d", volume);
     }
+    else if (d.act == kActFader || d.act == kActMaster)
+    {
+        uint8_t s = d.act == kActMaster ? i2mcu::kMasterChannel : strip;
+        if (faderKnown & (1u << s)) snprintf(out, cap, "%d%%", (fader[s] * 100 + i2mcu::kFaderMax / 2) / i2mcu::kFaderMax);
+        else snprintf(out, cap, "--");
+    }
+    else if (d.act == kActStrip)
+    {
+        snprintf(out, cap, "%d", bank * i2mcu::kStrips + strip + 1);
+    }
+    else if (d.act == kActPan && (ring[strip] & 0x80))
+    {
+        // V-Pot ring position 1-11, 6 = centre
+        int p = ring[strip] & 0x0F;
+        if (p == 0) snprintf(out, cap, "--");
+        else if (p == 6) snprintf(out, cap, "C");
+        else snprintf(out, cap, "%c%d", p < 6 ? 'L' : 'R', p < 6 ? 6 - p : p - 6);
+    }
     else
     {
         snprintf(out, cap, "%s%d", dialNet[i] > 0 ? "+" : "", dialNet[i]);
@@ -1230,7 +1498,11 @@ void DeckApp::drawChrome(Gfx& g)
     const char* link = "USB";
     if (!home)
     {
-        link = deck().link == kLinkKeys ? ((io && io->keysConnected()) ? "USB KEYS" : "NO USB") : deck().link == kLinkMidi ? "MIDI OUT" : (sending ? "FM + CC" : "FM");
+        bool keys = io && io->keysConnected();
+        link = deck().link == kLinkKeys ? (keys ? "USB KEYS" : "NO USB")
+               : deck().link == kLinkMidi ? "MIDI OUT"
+               : deck().link == kLinkMcu  ? (!keys ? "NO USB" : hostSeen ? "MCU LINKED" : "MCU OUT")
+                                          : (sending ? "FM + CC" : "FM");
     }
     chip(g, x, link, true, accent, x);
     if (lockSetting && unlocked)
@@ -1247,10 +1519,12 @@ void DeckApp::drawChrome(Gfx& g)
         bool on = false;
         if (home)
         {
-            const char* names[8] = { kBuiltin[0].key, kBuiltin[1].key, kBuiltin[2].key, kBuiltin[3].key, "MUSIC", "", mac ? "MAC" : "WIN", "" };
-            if (names[i][0] == 0) continue;
+            const char* v = i == 4 ? "MUSIC" : i == 6 ? (mac ? "MAC" : "WIN") : i == 7 ? (homePage ? "BACK" : "MORE") : "";
+            int index = homePage * kHomeDecks + i;
+            if (i < kHomeDecks && index < kBuiltinDecks) v = kBuiltin[index].key;
+            if (v[0] == 0) continue;
             snprintf(nameBuf, sizeof(nameBuf), "BUTTON %d", i + 1);
-            snprintf(value, sizeof(value), "%s", names[i]);
+            snprintf(value, sizeof(value), "%s", v);
         }
         else if (i == 7)
         {
@@ -1266,7 +1540,7 @@ void DeckApp::drawChrome(Gfx& g)
             for (uint8_t sIdx = 0; sIdx < 2; sIdx++)
             {
                 int16_t y0 = (int16_t)(430 + sIdx * 24);
-                bool live = sIdx == gradeSide;
+                bool live = sIdx == sideOf((uint8_t)deckIndex);
                 g.color(live ? colors[sIdx] : 0x55555C);
                 g.rect(506, y0, 594, (int16_t)(y0 + 20), 3);
                 if (!live)
@@ -1308,8 +1582,11 @@ void DeckApp::drawHome(Gfx& g)
 {
     g.color(kInk);
     g.dot(12, 50, 2, kLeft, "PICK A DECK");
+    g.color(kGrey);
+    g.dot(788, 50, 0, kRight, homePage ? "2/2" : "1/2");
     g.color(flashText[0] ? kHomeAccent : kGrey);
-    g.text(788, 66, kFont12, kRight, flashText[0] ? flashText : "Press the button under a deck.");
+    g.text(788, 66, kFont12, kRight, flashText[0] ? flashText : homePage ? "Press the button under a deck, or MASTER / FILE / CONFIG."
+                                                                     : "Press the button under a deck, or NOTE / INSTR / FX1 / FX2.");
 
     int16_t boxes[8 * 4];
     for (uint8_t i = 0; i < 8; i++)
@@ -1330,11 +1607,12 @@ void DeckApp::drawHome(Gfx& g)
         const char* b2 = "";
         const char* st = "";
         uint32_t c = 0x8E8E88;
-        if (i < kBuiltinDecks)
+        int index = homePage * kHomeDecks + i;
+        if (i < kHomeDecks && index < kBuiltinDecks)
         {
-            const BuiltinDeck& b = kBuiltin[i];
+            const BuiltinDeck& b = kBuiltin[index];
             key = b.key;
-            app = source(i).app;
+            app = source((uint8_t)index).app;
             b1 = b.blurb1;
             b2 = b.blurb2;
             st = b.status;
@@ -1356,6 +1634,14 @@ void DeckApp::drawHome(Gfx& g)
             b1 = "Press to";
             b2 = "switch.";
             st = "CMD / CTRL";
+        }
+        else if (i == 7)
+        {
+            key = homePage ? "BACK" : "MORE";
+            app = homePage ? "PAGE 1" : "PAGE 2";
+            b1 = homePage ? "Cut, grade," : "Mixer, file,";
+            b2 = homePage ? "hub, static." : "setup.";
+            st = "MORE DECKS";
         }
         int16_t x0 = (int16_t)(i * 100 + 4), x1 = (int16_t)(x0 + 92);
         if (!key[0]) continue;
@@ -1404,8 +1690,9 @@ void DeckApp::drawLive(Gfx& g)
         g.color(flashText[0] ? accent : 0xC9C9C2);
         g.text(12, 124, kFont14, kLeft, flashText[0] ? flashText : sub);
 
-        // bars
-        for (uint8_t i = 0; i < 4; i++)
+        // bars (MIXER: one strip per track instead)
+        if (mcu()) drawStrips(g);
+        for (uint8_t i = 0; i < (mcu() ? 0 : 4); i++)
         {
             const char* label = "";
             char value[8] = "";
@@ -1493,6 +1780,80 @@ void DeckApp::drawLive(Gfx& g)
         g.color(on ? kDark : kGrey);
         g.text(700, (int16_t)(y - 1), kFont12, kLeft, deck().pages[i].name);
     }
+}
+
+// MIXER: eight strips, as the host shows them. Each has its name (from the
+// host's display, else the track number the deck has counted), its fader
+// and its meter. The wheel's strip is lit.
+void DeckApp::drawStrips(Gfx& g)
+{
+    const uint32_t accent = deck().accent;
+    int16_t tracks[i2mcu::kStrips * 2 * 4];
+    int16_t fills[2][i2mcu::kStrips * 4];
+    int16_t lit[i2mcu::kStrips * 4];
+    int nf[2] = { 0, 0 }, nl = 0;
+    for (uint8_t i = 0; i < i2mcu::kStrips; i++)
+    {
+        int16_t x0 = (int16_t)(322 + i * 45);
+        int16_t* t = &tracks[i * 8];
+        t[0] = (int16_t)(x0 + 2);
+        t[1] = 66;
+        t[2] = (int16_t)(x0 + 18);
+        t[3] = 158;
+        t[4] = (int16_t)(x0 + 22);
+        t[5] = 66;
+        t[6] = (int16_t)(x0 + 28);
+        t[7] = 158;
+        bool sel = i == strip;
+        if (faderKnown & (1u << i))
+        {
+            int16_t* q = &fills[sel][nf[sel]++ * 4];
+            q[0] = (int16_t)(x0 + 2);
+            q[1] = (int16_t)(157 - fader[i] * 91 / i2mcu::kFaderMax);
+            q[2] = (int16_t)(x0 + 18);
+            q[3] = 158;
+        }
+        if (meter[i])
+        {
+            int16_t* q = &lit[nl++ * 4];
+            q[0] = (int16_t)(x0 + 22);
+            q[1] = (int16_t)(158 - meter[i] * 92 / i2mcu::kMeterMax);
+            q[2] = (int16_t)(x0 + 28);
+            q[3] = 158;
+        }
+    }
+    g.color(kTrack);
+    g.rects(tracks, i2mcu::kStrips * 2, 1);
+    const uint32_t fillColor[2] = { 0x8E8E88, accent };
+    for (int k = 0; k < 2; k++)
+    {
+        if (!nf[k]) continue;
+        g.color(fillColor[k]);
+        g.rects(fills[k], nf[k], 1);
+    }
+    if (nl)
+    {
+        g.color(0x5BE3A5);
+        g.rects(lit, nl, 1);
+    }
+    // names: the host's top display row, 7 characters per strip
+    for (uint8_t i = 0; i < i2mcu::kStrips; i++)
+    {
+        char name[8];
+        const char* src = &lcd[i * 7];
+        int n = 0;
+        for (int k = 0; k < 7 && n < 5; k++)
+        {
+            if (src[k] > ' ' || (n > 0 && src[k] == ' ')) name[n++] = src[k];
+        }
+        while (n > 0 && name[n - 1] == ' ') n--;
+        name[n] = 0;
+        if (n == 0) snprintf(name, sizeof(name), "%d", bank * i2mcu::kStrips + i + 1);
+        g.color(i == strip ? accent : kGrey);
+        g.text((int16_t)(322 + i * 45 + 2), 46, kFont12, kLeft, name);
+    }
+    g.color(kGrey);
+    g.text(322, 162, kFont12, kLeft, hostSeen ? "" : "Nothing from the host yet. Set it up: see the deck file.");
 }
 
 // STATIC's GLITCH page: the station on the left, one row per effect in the

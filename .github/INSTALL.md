@@ -4,9 +4,9 @@ A start-to-finish guide: from a stock Tracker to i2 DECK. Plan on 20–30 minute
 
 > **Which Tracker?** This firmware is for the **original Polyend Tracker** (the 2020 desktop model). Builds for Tracker+ and Tracker Mini exist, but i2 DECK only appears on the original.
 
-> **v0.3 is not yet tested on hardware.** v0.2 runs on a real Tracker; v0.3's new parts (Premiere Color Mode in GRADE, STATIC's glitch section, the lock) have only run on a PC test harness. Do Part 2 (backup) and Part 3a (official firmware on the card) before anything else.
+> **v0.4 is not yet tested on hardware.** v0.2 runs on a real Tracker; v0.3's and v0.4's new parts (Premiere Color Mode in GRADE, STATIC's glitch section, the lock, and the MIXER, FILE and SETUP decks) have only run on a PC test harness. Do Part 2 (backup) and Part 3a (official firmware on the card) before anything else.
 
-> **v0.3 locks the Tracker's File and Config screens.** Firmware updates live in Config, so from v0.3 on, open the lock first with the combo in [Unlocking](#unlocking-file-config-and-firmware-update).
+> **From v0.3 the Tracker's File and Config screens are locked, and from v0.4 the Config button in i2 DECK opens the SETUP deck.** Firmware updates live in Polyend's Config, so the way there is: **unlock** (hold Shift + Rec for 2 seconds in i2 DECK), press **PATTERN**, **then Config**. See [Unlocking](#unlocking-file-config-and-firmware-update).
 
 > **Is it safe?** The Tracker's bootloader sits on its own chip and is never touched by a firmware update. If a build ever misbehaves, Part 7 gets you back to official firmware in a minute.
 
@@ -99,6 +99,8 @@ This step confirms your Tracker takes Community Edition before any i2 code is in
 
 **Already on v0.2?** Config isn't locked in v0.2, so update the usual way. After the update, the Tracker is locked.
 
+**Already on v0.3?** On the i2 DECK home screen hold Shift + Rec for 2 seconds (UNLOCKED), press Config (in v0.3 it opens Polyend's Config straight from i2 DECK once unlocked), then Firmware update. From v0.4 on, use the route above: unlock, PATTERN, Config.
+
 ---
 
 ## Part 6: Use i2 DECK
@@ -119,27 +121,40 @@ This step confirms your Tracker takes Community Edition before any i2 code is in
 | Change what the jog wheel does | The screen button under the job's name (bottom of the screen) |
 | Go back to the home screen | Screen button 8 (HOME), in every deck |
 | Jump to CUT, GRADE, HUB or STATIC | NOTE, INSTRUMENT, FX1 or FX2 (from anywhere in i2 DECK) |
+| Jump to MIXER, FILE or SETUP | MASTER, FILE or CONFIG (from anywhere in i2 DECK) |
+| See MIXER, FILE and SETUP on the home screen | Screen button 8 (MORE); button 8 again (BACK) |
 | Turn the page (CUT) | Screen button 7 |
 | Add Shift to a key or wheel step | Hold Shift |
-| Open the normal Tracker | PATTERN, or MUSIC on the home screen (button 5). While locked, the other big Tracker buttons (Params through Song) do nothing in i2 DECK |
+| Open the normal Tracker | PATTERN, or MUSIC on the home screen (button 5). Params, Performance, the Sample buttons and Song do nothing in i2 DECK |
 | Come back to i2 DECK | Config or File (while locked); Config > i2 > Deck (when unlocked) |
 | Switch GRADE between Resolve and Premiere | Screen button 6 in GRADE |
+| Switch MIXER, FILE and SETUP between Resolve and Premiere | Screen button 6 in any of them (they switch together) |
 | Turn the page (STATIC: TUNER / GLITCH) | Screen button 7 |
-| Unlock File and Config until restart | Hold Shift + Rec together for 2 seconds |
+| Open Polyend's Config (firmware update) | Hold Shift + Rec together for 2 seconds (unlocks until restart), then PATTERN, then Config |
 
-**The four decks**
+**The decks**
 
-| Button | Deck | For | Notes |
-|---|---|---|---|
-| 1 | CUT | Premiere Pro | Premiere's default shortcuts. Two pages |
-| 2 | GRADE | DaVinci Resolve colour page **or** Premiere Color Mode | Button 6 switches. Resolve: press **LITE** once, then the wheel trims MASTER / RED / GREEN / BLUE. Premiere: latch a control, then the wheel nudges it. Some Premiere keys need checking (see below) |
-| 3 | HUB | i2 Creative Hub / ComfyUI | Sends MIDI notes. The Hub doesn't listen yet, so this one is waiting on the Hub |
-| 4 | STATIC | The built-in FM radio | Plug in headphones (the cable is the antenna); you hear the station. Seek, store stations with Shift + a station pad. Page 2 (GLITCH): hold pads to stutter, crush, tape-stop, scan, filter or freeze the radio |
+| Tracker button | Home screen | Deck | For | Notes |
+|---|---|---|---|---|
+| NOTE | page 1, button 1 | CUT | Premiere Pro | Premiere's default shortcuts. Two pages |
+| INSTRUMENT | page 1, button 2 | GRADE | DaVinci Resolve colour page **or** Premiere Color Mode | Button 6 switches. Resolve: press **LITE** once, then the wheel trims MASTER / RED / GREEN / BLUE. Premiere: latch a control, then the wheel nudges it. Some Premiere keys need checking (see below) |
+| FX1 | page 1, button 3 | HUB | i2 Creative Hub / ComfyUI | Sends MIDI notes. The Hub doesn't listen yet, so this one is waiting on the Hub |
+| FX2 | page 1, button 4 | STATIC | The built-in FM radio | Plug in headphones (the cable is the antenna); you hear the station. Seek, store stations with Shift + a station pad. Page 2 (GLITCH): hold pads to stutter, crush, tape-stop, scan, filter or freeze the radio |
+| MASTER | page 2, button 1 | MIXER | The Premiere Audio Track Mixer **or** the Resolve Fairlight mixer | A Mackie Control surface over USB MIDI: mute / solo / arm / select for 8 tracks, banks, transport; the wheel moves faders and pan. Set the app up once (below) |
+| FILE | page 2, button 2 | FILE | Premiere **or** Resolve | New, open, save, import, export, render |
+| CONFIG | page 2, button 3 | SETUP | Premiere **or** Resolve | Settings pages, project / sequence settings, keyboard shortcuts, render cache. Some keys need assigning once (below) |
+| PATTERN | page 1 or 2, button 5 | MUSIC | The normal Tracker | |
+
+**MIXER, one-time setup in the app**
+- **Premiere:** Premiere Pro > Settings (Windows: Edit > Preferences) > **Control Surface** > **Add** > **Mackie**. Select it, click **Edit**, and pick the Tracker as **MIDI Input Device** and **MIDI Output Device**. Open Window > Audio Track Mixer.
+- **Resolve:** DaVinci Resolve > Preferences > System > **Control Panels**: tick **Use MIDI Audio Console**, set MIDI Protocol to **MCU**, and pick the Tracker as MIDI Input and MIDI Output. Open the Fairlight page.
+
+**FILE and SETUP, one-time setup in the app (optional).** Keys the apps don't have by default are marked `[SET]` in the deck files. They send **Control + Option + Shift + a letter** (Windows: Ctrl + Alt + Shift + the letter). In Premiere's **Keyboard Shortcuts** (Cmd/Ctrl + Option/Alt + K) or Resolve's **Keyboard Customization** (same keys), give each command the key shown in [`tools/i2deck/APP_DECKS.md`](../tools/i2deck/APP_DECKS.md). Keys marked `[??]` are guesses to check.
 
 **Premiere Color Mode keys (one-time check).** Adobe hasn't published most of Color Mode's default keys, so `i2/Deck/gradepr.txt` marks each key `[OK]`, `[??]` or `[SET]`. In Premiere: check **Window > Mode** against the EDIT / COLR / EXPT pads, and in **Keyboard Shortcuts** (pick the Color Mode layout) give the latch commands (Contrast, Exposure...) the keys the deck sends, or put Premiere's keys in the file. Details: [`tools/i2deck/PREMIERE_COLOR.md`](../tools/i2deck/PREMIERE_COLOR.md).
 
 **Changing what a pad does (optional)**
-1. The first time a deck opens, it writes itself to the SD card: `i2/Deck/cut.txt`, `grade.txt` (Resolve), `gradepr.txt` (Premiere), `hub.txt`, `static.txt`.
+1. The first time a deck opens, it writes itself to the SD card: `i2/Deck/cut.txt`, `grade.txt` (Resolve), `gradepr.txt` (Premiere), `hub.txt`, `static.txt`, `mixerres.txt` / `mixerpr.txt`, `fileres.txt` / `filepr.txt`, `setupres.txt` / `setuppr.txt` (Resolve / Premiere).
 2. Edit the file on a computer. The format is explained at the top of the file and in the [README](README.md#making-your-own-deck).
 3. Put the card back and open the deck again.
 
@@ -149,10 +164,10 @@ If you've changed shortcuts in Premiere or Resolve, edit the deck to match.
 
 ### Unlocking File, Config and Firmware update
 
-The Tracker shows only i2 DECK, its decks and MUSIC. Polyend's **File** and **Config** screens are locked.
+The Tracker shows only i2 DECK, its decks and MUSIC. Polyend's **File** and **Config** screens are locked. In i2 DECK the File and Config buttons always open the FILE and SETUP decks; Polyend's screens are reached from the normal Tracker.
 
-- **Until the next restart:** in i2 DECK (the home screen is easiest), **hold Shift and Rec together for 2 seconds** (bottom row of the right-hand buttons, side by side). The screen says **UNLOCKED UNTIL RESTART**, and an UNLOCKED chip stays in the top bar. Hold them for 2 seconds again to lock.
-- **For good:** in `i2/Deck/settings.txt` on the card, change `lock=on` to `lock=off`.
+- **Until the next restart:** in i2 DECK (the home screen is easiest), **hold Shift and Rec together for 2 seconds** (bottom row of the right-hand buttons, side by side). The screen says **UNLOCKED UNTIL RESTART**, and an UNLOCKED chip stays in the top bar. Then press **PATTERN** for the normal Tracker, and **Config** (or File) opens Polyend's screen: **Config > Firmware > Firmware update**. Config > i2 > Deck goes back to i2 DECK. Hold Shift + Rec for 2 seconds again in i2 DECK to lock.
+- **For good:** in `i2/Deck/settings.txt` on the card, change `lock=on` to `lock=off`. Then Config in the normal Tracker always opens Polyend's Config (still via PATTERN from i2 DECK).
 
 ---
 
@@ -178,7 +193,7 @@ Projects saved under Community Edition may use a newer format that 1.9.2 can't o
 - To skip i2 DECK at start-up, put a file `i2/Deck/settings.txt` on the card containing the two lines `lock=off` and `boot=music`.
 
 **I can't get into Config (locked)**
-- Do the unlock combo on the i2 DECK home screen: hold Shift + Rec together for 2 seconds.
+- Do the unlock combo on the i2 DECK home screen: hold Shift + Rec together for 2 seconds. Then PATTERN, then Config. (Config pressed in i2 DECK opens the SETUP deck, not Polyend's Config.)
 - Or put the card in a computer and change `lock=on` to `lock=off` in `i2/Deck/settings.txt` (create the file with just that line if it's missing).
 - Or use the pinhole recovery above. It doesn't need Config at all.
 
@@ -192,6 +207,11 @@ Projects saved under Community Edition may use a newer format that 1.9.2 can't o
 - Click on the timeline first, because many shortcuts only work when the timeline has focus.
 - The decks assume the app's default shortcuts.
 
+**MIXER does nothing in Premiere or Resolve**
+- Check the one-time setup above: the Tracker must be both the MIDI input and the MIDI output of the Mackie device (Premiere) or MIDI audio console (Resolve). Restart the app after changing it.
+- The top-right chip says **MCU LINKED** once the app has sent anything back. **MCU OUT** means the Tracker is sending but has heard nothing yet; pads may still work one-way.
+- Premiere: the Audio Track Mixer is what it drives (not the Audio Clip Mixer). Resolve: the Fairlight mixer.
+
 **The top-right corner says NO USB**
 - The computer hasn't picked up the Tracker as a keyboard. Most often it's a **charge-only USB-C cable**: it powers the Tracker but carries no data. Swap it for a data-rated cable (one that syncs a phone).
 - Then unplug and replug once.
@@ -203,7 +223,7 @@ Projects saved under Community Edition may use a newer format that 1.9.2 can't o
 1. Download the newest build (Part 3b).
 2. Copy it to `Firmware`. You can delete the older `PolyendTracker_i2_` file.
 3. On the i2 DECK home screen, unlock: hold Shift + Rec together for 2 seconds.
-4. Run **Config > Firmware > Firmware update** (Part 5).
+4. Press **PATTERN**, then run **Config > Firmware > Firmware update** (Part 5).
 
 Your decks and settings stay on the SD card. When an update brings a newer version of a built-in deck, the Tracker keeps your old file as `<name>-old.txt` (for example `static-old.txt`) and writes the new one; copy any edits across. To get a built-in deck back at any time, delete its file in `i2/Deck/`.
 

@@ -6,7 +6,7 @@ It adds **i2 DECK**: a new full-screen interface that turns the Tracker into a c
 
 ![i2 DECK home screen](img/01_home.png)
 
-> **Status: v0.3, not yet tested on hardware.** v0.2 runs on Ian's Tracker, and its USB keys reach Windows over a data-rated USB-C cable. v0.3 adds the Premiere Color Mode side of GRADE, STATIC's glitch section and the lock. It builds for all three Trackers, and every screen below is rendered from the real firmware code on a PC. i2 DECK only appears on the original Tracker (2020). See the [test checklist](#hardware-test-checklist).
+> **Status: v0.4, not yet tested on hardware.** v0.2 runs on Ian's Tracker, and its USB keys reach Windows over a data-rated USB-C cable. v0.3 added the Premiere Color Mode side of GRADE, STATIC's glitch section and the lock. v0.4 adds three decks on the MASTER, FILE and CONFIG buttons: **MIXER** (a Mackie Control surface for the Premiere and Resolve mixers), **FILE** and **SETUP**. It builds for all three Trackers, and every screen below is rendered from the real firmware code on a PC. i2 DECK only appears on the original Tracker (2020). See the [test checklist](#hardware-test-checklist).
 >
 > **Use a data-rated USB-C cable.** A charge-only cable powers the Tracker, but the deck shows **NO USB** and the computer sees nothing.
 
@@ -19,12 +19,28 @@ The short version:
 2. Put the official Tracker 1.9.2 and CE 1.0 `.ptf` files from [polyend.com/downloads](https://polyend.com/downloads/) in `Firmware/` as a safety net.
 3. Download the newest **polyend-tracker-ce-firmware** artifact from the [Actions tab](https://github.com/i2interactive/tracker-i2-edition/actions/workflows/build.yml). You need to be signed in to GitHub.
 4. Copy `PolyendTracker_i2_<version>.ptf` to `Firmware/` without renaming it.
-5. On the Tracker, run **Config > Firmware > Firmware update**. From v0.3 on, Config is locked: first open the lock with the [unlock combo](#the-lock) on the i2 DECK home screen.
+5. On the Tracker, run **Config > Firmware > Firmware update**. From v0.3 on, Config is locked, and from v0.4 the Config button in i2 DECK opens the SETUP deck. So: on the i2 DECK home screen, **unlock** (hold Shift + Rec for 2 seconds, see [the lock](#the-lock)), press **PATTERN** to get to the normal Tracker, **then Config**.
 6. The Tracker restarts into i2 DECK.
 
 ## How i2 DECK works
 
-The Tracker starts on the **home screen**. The eight buttons under the screen pick what is above them: a deck, **MUSIC** (the normal Tracker), or the **Mac / Win** switch.
+The Tracker starts on the **home screen**. The eight buttons under the screen pick what is above them: a deck, **MUSIC** (the normal Tracker), or the **Mac / Win** switch. The home screen has two pages: **button 8 (MORE / BACK)** turns it. Page 1 holds CUT, GRADE, HUB and STATIC; page 2 holds MIXER, FILE and SETUP. HOME from a deck goes back to that deck's page.
+
+![i2 DECK home screen, page 2](img/16_home_page2.png)
+
+**The big Tracker buttons in i2 DECK** (locked or unlocked):
+
+| Button | Opens |
+|---|---|
+| NOTE | CUT |
+| INSTRUMENT | GRADE |
+| FX1 | HUB |
+| FX2 | STATIC |
+| MASTER | MIXER |
+| FILE | FILE |
+| CONFIG | SETUP (the settings deck) |
+| PATTERN | MUSIC: the normal Tracker |
+| Params, Performance, Sample Load / Play / Edit / Rec, Song | nothing |
 
 Every deck uses the same layout:
 
@@ -36,24 +52,22 @@ Every deck uses the same layout:
 
 - **Shift** adds Shift to any pad or wheel step.
 - **Play, the arrows, Delete, Copy and Insert** send Space, the arrow keys, Backspace, Copy and Paste in the keyboard decks.
-- **NOTE, INSTRUMENT, FX1 and FX2 jump straight to CUT, GRADE, HUB and STATIC** from the home screen or any deck.
-- **PATTERN opens the normal Tracker** (the same as MUSIC, button 5 on the home screen), locked or not.
-- **The other big Tracker buttons** (Params, Performance, File, Config, Master, Sample Load / Play / Edit / Rec, Song) **do nothing in i2 DECK while locked**. In the normal Tracker they all work as usual (except File and Config, see [The lock](#the-lock)); in the Tracker's screens, **Config (or File) brings you back to i2 DECK** while locked. Unlocked, the big buttons open their Tracker screens from i2 DECK too.
+- **The deck buttons work from the home screen or any deck.** In the normal Tracker every big button works as usual, except File and Config while locked: there they **bring you back to i2 DECK** (see [The lock](#the-lock)).
 - **Mac or Windows:** button 7 on the home screen. It swaps Cmd for Ctrl and Option for Alt, and is remembered.
 
 ### The lock
 
 The Tracker shows only the i2 DECK home screen, its decks and MUSIC (the normal pattern, instrument, sample and song screens). Polyend's **File** (project browser) and **Config** screens are locked:
 
-- In i2 DECK, the big Tracker buttons, File and Config included, do nothing. PATTERN is the exception: it opens the normal Tracker.
-- In the Tracker's own screens, File and Config take you to the i2 DECK home screen, which shows **LOCKED**. This is also the way back to the deck.
+- In i2 DECK, File and Config open the FILE and SETUP decks, never Polyend's screens (locked or not). PATTERN opens the normal Tracker.
+- In the Tracker's own screens, File and Config take you to the i2 DECK home screen, which shows **LOCKED**. This is also the way back to the deck. Unlocked, they open Polyend's File and Config as usual, and Config > i2 > Deck comes back.
 - A locked Tracker always starts in i2 DECK (`boot=music` only applies when the lock is off).
 
-**To unlock until the next restart:** in i2 DECK (home screen or any deck), **hold Shift and Rec together for 2 seconds** (bottom row of the right-hand buttons, next to each other). The home screen shows **UNLOCKED UNTIL RESTART**, and an UNLOCKED chip stays in the top bar. File, Config and **Config > Firmware > Firmware update** now work. Hold them for 2 seconds again to lock without restarting.
+**To reach Polyend's Config (and Firmware update):** in i2 DECK (home screen or any deck), **hold Shift and Rec together for 2 seconds** (bottom row of the right-hand buttons, next to each other). The home screen shows **UNLOCKED UNTIL RESTART**, and an UNLOCKED chip stays in the top bar. Then press **PATTERN** (or MUSIC) to get to the normal Tracker, and press **Config**: Config and **Config > Firmware > Firmware update** work. File works there too. Hold Shift + Rec for 2 seconds again in i2 DECK to lock without restarting.
 
 **To turn the lock off for good:** change `lock=on` to `lock=off` in `i2/Deck/settings.txt` on the SD card.
 
-There is no way to get stuck: the combo always works in i2 DECK, `lock=off` on the card always works, and the recessed pinhole recovery on the bottom of the Tracker is in the bootloader, which firmware can't touch (see [INSTALL.md](INSTALL.md#part-7-if-something-goes-wrong)).
+There is no way to get stuck: PATTERN always leads from i2 DECK to the Tracker, the combo always works in i2 DECK, `lock=off` on the card always works, and the recessed pinhole recovery on the bottom of the Tracker is in the bootloader, which firmware can't touch (see [INSTALL.md](INSTALL.md#part-7-if-something-goes-wrong)).
 
 ### CUT: Premiere Pro
 
@@ -126,15 +140,47 @@ The original Tracker has an FM receiver. STATIC tunes it, **plays it** through t
 
 **How the radio is processed:** the Si4703's audio goes through an analog switch into the codec's line input (the same route the sample recorder uses for Radio). The codec streams it into the audio engine with the line-in signal (`i2sStream -> stereoToMono -> mixer`). On the original Tracker that stream now passes through a small processor (`i2glitch::Core`) before the mixer. When nothing is engaged it passes the audio straight through and keeps 3 s of history in SDRAM. When an effect is engaged, it works on a mono mix (the tuner runs in mono) and costs well under 1% of the CPU per audio block. Outside STATIC, the line input goes back to the jack at the project's line-in volume, and the processor stays a pass-through.
 
+### MIXER: the Premiere and Resolve mixers, as a Mackie Control surface (MASTER)
+
+![MIXER deck, Premiere side](img/18_mixer_premiere.png)
+
+Premiere Pro and DaVinci Resolve both take a **Mackie Control (MCU)** surface over MIDI, so MIXER is one, over the Tracker's USB MIDI port. **Screen button 6** switches RESOLVE / PREMIERE (shared with FILE and SETUP: `app=` in `settings.txt`). Set the app up once:
+
+- **Premiere:** Premiere Pro > Settings (Windows: Edit > Preferences) > **Control Surface** > Add > **Mackie**; select it, Edit, and pick the Tracker as MIDI Input Device and MIDI Output Device. It drives the **Audio Track Mixer**: faders, pan, mute, solo, banks, play and record.
+- **Resolve:** Preferences > System > **Control Panels**: tick **Use MIDI Audio Console**, MIDI Protocol **MCU**, MIDI Input and Output: the Tracker. It drives the **Fairlight** mixer: faders, pan, rec arm, solo, mute, select, banks, transport, jog.
+
+What the deck does:
+
+- **Pads, blocks 1-2:** a channel strip per column for 8 tracks: REC (arm), SOLO, MUTE, SELECT. A lit pad is a lit LED in the app, so mute and solo states show on the pads.
+- **Block 3:** BANK -8 / +8 and -1 / +1, rewind, fast forward, stop, play, record, cycle, marker, undo; the last row is plain keys: open the mixer (Premiere: Audio Track / Clip Mixer, Shift+6 / Shift+9; Resolve: Fairlight / Edit page) and clip volume +1 / -1 dB.
+- **Wheel:** FADER moves the picked track's fader (any strip pad picks the track; so does the TRACK dial), PAN its pan, JOG the app's jog wheel, CLIP VOL the clip volume keys, MASTER the master fader. Shift = big steps.
+- **Screen:** the eight strips with their names (when the app sends its display), fader positions and meters, all from the app. Without a position from the app, a fader starts at 0.
+
+While i2 DECK is open, notes and control changes that arrive over USB go to the deck, not to the Tracker's instruments (Mackie hosts send their LEDs as notes). Protocol details, sources and what's verified: [`tools/i2deck/APP_DECKS.md`](../tools/i2deck/APP_DECKS.md).
+
+### FILE: new, open, save, import, export (FILE)
+
+![FILE deck, Premiere side](img/21_file_premiere.png)
+
+Keyboard shortcuts for the File menu and export. **Premiere:** new project / sequence / bin, open, save / save as / save a copy, close, quit, import (and from the Media Browser), properties, Export Media, send to Media Encoder, export frame, render. **Resolve:** Project Manager, save / save as, import media / timeline, export project / timeline, Media page, Deliver page, quick export, render queue. The wheel moves through dialogs (Down / Up, Tab / Shift+Tab, Left / Right). Screen button 6 switches RESOLVE / PREMIERE.
+
+### SETUP: settings, caches and keys (CONFIG)
+
+![SETUP deck, Premiere side](img/22_setup_premiere.png)
+
+The settings deck (named SETUP to fit the home tile). **Premiere:** every Settings / Preferences page (General, Audio, Audio Hardware, Media, Media Cache, Playback, Timeline, Auto Save, Control Surface), Keyboard Shortcuts, Project Settings, Scratch Disks, Sequence Settings, Project Manager, render and delete render files, Window > Mode, workspace reset. **Resolve:** Preferences, Keyboard Customization, Project Settings, Project Manager, Timeline Settings, render cache modes and delete, proxy / optimized media, and the seven pages. A dialog block (Enter, Esc, Tab, arrows, Space) and the same dialog wheel as FILE.
+
+**One-time setup:** Premiere has no default keys for its settings pages, and some File and Resolve commands have none either. Those pads are marked `[SET]` in the deck files and send **Control + Option + Shift + a letter** (Windows: Ctrl + Alt + Shift). Give each command that key in Premiere's Keyboard Shortcuts or Resolve's Keyboard Customization. `[??]` keys are guesses to check. The full list: [`tools/i2deck/APP_DECKS.md`](../tools/i2deck/APP_DECKS.md).
+
 ### Making your own deck
 
-The first time a deck opens, it is written to the SD card as `i2/Deck/cut.txt`, `grade.txt`, `hub.txt` or `static.txt`. Edit the file on a computer and reopen the deck. No new firmware is needed. Delete the file to get the built-in version back.
+The first time a deck opens, it is written to the SD card as `i2/Deck/cut.txt`, `grade.txt`, `hub.txt`, `static.txt`, and for the decks with a Resolve / Premiere switch `mixerres.txt` / `mixerpr.txt`, `fileres.txt` / `filepr.txt`, `setupres.txt` / `setuppr.txt`. Edit the file on a computer and reopen the deck. No new firmware is needed. Delete the file to get the built-in version back.
 
 ```text
 DECK CUT
 REV 1                          (optional: see below)
 APP Premiere Pro
-LINK KEYS                      (KEYS, MIDI or RADIO)
+LINK KEYS                      (KEYS, MIDI, RADIO or MCU)
 COLOR 7FB2FF
 PAGE EDIT
 BLOCK 1 PLAY + MARK            (blocks 1-3, left to right)
@@ -144,9 +190,10 @@ K -                            (leave a pad empty)
 DIAL 1 FRAME | RIGHT | LEFT    (wheel job: name | clockwise | anticlockwise)
 ```
 
-- Up to 4 pages, 16 keys per block, 7 dials per page (6 in a deck with more than one page, where button 7 turns the page; in GRADE, button 6 is the app switch). Codes are up to 4 characters, names up to 10.
+- Up to 4 pages, 16 keys per block, 7 dials per page (6 in a deck with more than one page, where button 7 turns the page; in GRADE, MIXER, FILE and SETUP, button 6 is the app switch). Codes are up to 4 characters, names up to 10.
 - GRADE has two files: `grade.txt` (Resolve) and `gradepr.txt` (Premiere).
 - **REV:** the built-in decks carry a version. When new firmware brings a newer GRADE or STATIC deck, the old file on the card is kept as `<name>-old.txt` (for example `static-old.txt`) and replaced, and the deck flashes a note. Copy your edits across from the old file. v0.3 does this once for `grade.txt` and `static.txt`.
+- **MIXER actions** (`LINK MCU`; pads with a shortcut still send keys): strip buttons `@REC1`-`@REC8 @SOLO1`-`8 @MUTE1`-`8 @SEL1`-`8`, `@BANK- @BANK+ @CH- @CH+ @FLIP @REW @FF @STOP @PLAY @RECORD @CYCLE @MARKER @UNDO @SAVE @NUDGE @READ @WRITE @TOUCH @LATCH`, any Mackie note as `@N<0-127>`, and the dial jobs `@FADER @MASTER @PAN @STRIP @JOG`.
 - **STATIC actions** (instead of a shortcut): `@SEEK+ @SEEK- @STEP+ @STEP- @P1`-`@P8 @SEND @RECORDER @MON`, the glitches `@STUTTER @CRUSH @STOP @SCAN @FILTER @FREEZE @RSSI @KILL`, beat repeats `@R2 @R4 @R8 @R16 @R32 @R64`, and the dial jobs `@TUNE @AMOUNT @LENGTH @VOLUME`.
 - **Modifiers:** `CMD` (Cmd on Mac, Ctrl on Windows), `CTRL`, `SHIFT`, `OPT` or `ALT`, `WIN`.
 - **Keys:** A-Z, 0-9, F1-F24, SPACE, ENTER, ESC, TAB, BKSP, DEL, INS, HOME, END, PGUP, PGDN, UP, DOWN, LEFT, RIGHT, BACKSLASH, the symbols `- = [ ] ; ' , . /` and the grave accent, and the number pad as KP0-KP9, KPPLUS, KPMINUS, KPENTER.
@@ -160,6 +207,7 @@ os=mac          mac or win
 boot=deck       deck or music (music only works with lock=off)
 lock=on         on or off: the File / Config lock
 grade=resolve   resolve or premiere: GRADE's app
+app=premiere    resolve or premiere: MIXER, FILE and SETUP's app
 freq=981        STATIC's station, in 100 kHz
 vol=80          STATIC's radio volume, 0-100
 p1=885 ... p8=1079   station presets
@@ -168,6 +216,16 @@ p1=885 ... p8=1079   station presets
 ### Hardware test checklist
 
 v0.2 (passed on Ian's Tracker, Nov 14): boots to i2 DECK, USB keys reach Windows over a data-rated cable.
+
+v0.4 (use a data-rated USB-C cable):
+1. **Buttons.** From the home screen and from inside a deck, locked and unlocked: NOTE, INSTRUMENT, FX1, FX2, MASTER, FILE, CONFIG open CUT, GRADE, HUB, STATIC, MIXER, FILE, SETUP. PATTERN opens the Tracker. Params, Performance, the four Sample buttons and Song do nothing.
+2. **Home page 2.** Button 8 (MORE) shows MIXER, FILE, SETUP on buttons 1-3; button 8 (BACK) returns. HOME from MIXER lands on page 2.
+3. **Route to Polyend's Config.** Locked: in the Tracker (PATTERN), Config brings you back to i2 DECK (LOCKED). Unlock (Shift + Rec, 2 s), PATTERN, Config: Config opens, and Config > Firmware > Firmware update is there. Config > i2 > Deck comes back.
+4. **MIXER in Premiere.** Add a Mackie control surface (see MIXER above) with the Tracker as input and output. With the Audio Track Mixer open: MUTE / SOLO pads toggle tracks, and the pads light when you mute in Premiere; the FADER wheel moves the picked track (does Premiere move the on-screen fader and send it back?); PAN; BANK; PLAY / STOP. Note which of REC, SELECT, CYCLE, MARK, UNDO, JOG, MASTER do anything. Does the Tracker's screen show track names and meters?
+5. **MIXER in Resolve.** Preferences > System > Control Panels: Use MIDI Audio Console, MCU, the Tracker. On the Fairlight page, the same tests. Does the Tracker make any sound while Premiere or Resolve talk to it in i2 DECK? (It shouldn't.) And in MUSIC (the normal Tracker)?
+6. **App switch.** Button 6 in MIXER, FILE or SETUP switches all three; GRADE keeps its own choice; both survive a restart.
+7. **FILE and SETUP.** Try the OK keys (Save, Import, Export Media, Keyboard Shortcuts, Project Settings in Resolve). Assign a few `[SET]` keys in Premiere and try them; check the `[??]` ones.
+8. **Nothing stuck.** Hold a pad and press MASTER / FILE / CONFIG / HOME: no key or MIDI note stays held.
 
 v0.3:
 1. **Update and lock.** After flashing, the Tracker boots to i2 DECK. Press each big Tracker button (Params through Song, Config and File included): nothing happens. PATTERN opens the normal Tracker. NOTE, INSTRUMENT, FX1 and FX2 open CUT, GRADE, HUB and STATIC, from the home screen and from inside another deck. MUSIC (button 5) opens the Tracker; Pattern, Song and Sample screens work; File and Config there bring you back to the i2 DECK home screen, which says LOCKED.
@@ -192,6 +250,7 @@ sh tools/i2deck/host/run.sh        # needs g++, Python 3 and Pillow; output in t
 
 - **Creative Hub:** make the Hub listen to the HUB deck (Web MIDI), then send state back to the Tracker's screen
 - **GRADE:** fill in Premiere Color Mode's real latch keys once checked; a small helper for true lift/gamma/gain control
+- **MIXER / FILE / SETUP:** fill in the real Resolve and Premiere keys once checked; trim MIXER to what each host really answers
 - **STATIC:** record the glitched output straight into a sample; per-effect presets
 - **Decks:** pad + wheel combos, more decks, a deck picker for user files
 - **i2 Arcade:** the KAGEMORI ports from v0.1 are parked in [`shelved/`](../shelved/) and can come back as a deck
@@ -201,12 +260,15 @@ sh tools/i2deck/host/run.sh        # needs g++, Python 3 and Pillow; output in t
 | Path | What |
 |---|---|
 | [`core/interface/i2Deck/i2DeckApp.*`](../core/interface/i2Deck/) | The interface: screens, navigation, deck file parser. No Tracker dependencies |
-| [`core/interface/i2Deck/i2DeckDecks.cpp`](../core/interface/i2Deck/i2DeckDecks.cpp) | The built-in decks, as text (GRADE has a Resolve and a Premiere file) |
+| [`core/interface/i2Deck/i2DeckDecks.cpp`](../core/interface/i2Deck/i2DeckDecks.cpp) | The built-in decks, as text (GRADE, MIXER, FILE and SETUP each have a Resolve and a Premiere file) |
+| [`core/interface/i2Deck/i2Mcu.h`](../core/interface/i2Deck/i2Mcu.h) | MIXER's Mackie Control encoding (tested by the harness) |
+| [`tools/i2deck/APP_DECKS.md`](../tools/i2deck/APP_DECKS.md) | Research notes: MIXER (Mackie Control in Premiere and Resolve), FILE and SETUP shortcuts, with sources |
+| [`core/source/mtMidi.cpp`](../core/source/mtMidi.cpp), [`core/include/Platform.h`](../core/include/Platform.h) | i2 DECK takes the USB MIDI input while it is open (pitch bend, pressure and sysex added for MIXER), and gives it back |
 | [`core/interface/i2Deck/i2Glitch.*`](../core/interface/i2Deck/) | STATIC's glitch processor (no Tracker dependencies; tested by the harness) |
 | [`core/AudioEngine/AudioEffectI2Glitch.*`](../core/AudioEngine/) | Puts the glitch processor in the line-in stream (`AudioInput`, `audioEngine::connectInputToMixer`). Original Tracker only |
-| [`core/interface/core/interface.cpp`](../core/interface/core/interface.cpp) | The lock: `switchModuleByButton` sends File and Config to i2 DECK while locked |
+| [`core/interface/core/interface.cpp`](../core/interface/core/interface.cpp) | The lock: in the Tracker's screens, `switchModuleByButton` sends File and Config to i2 DECK while locked |
 | [`tools/i2deck/PREMIERE_COLOR.md`](../tools/i2deck/PREMIERE_COLOR.md) | Research notes: Premiere Color Mode shortcuts and control surfaces |
-| [`core/interface/i2Deck/fI2Deck.cpp`](../core/interface/i2Deck/fI2Deck.cpp) | The Tracker module: input, USB keyboard, MIDI, radio, SD card |
+| [`core/interface/i2Deck/fI2Deck.cpp`](../core/interface/i2Deck/fI2Deck.cpp) | The Tracker module: input (which big button opens which deck), USB keyboard, MIDI in and out, radio, SD card |
 | [`core/interface/i2Deck/i2Canvas.*`](../core/interface/i2Deck/) | Drawing on the FT812 display chip |
 | [`core/interface/i2Deck/i2DotFont.*`](../core/interface/i2Deck/) | The 5x7 dot-matrix face, generated at start-up in three sizes |
 | [`tools/i2deck/host/`](../tools/i2deck/host/) | The PC test harness |

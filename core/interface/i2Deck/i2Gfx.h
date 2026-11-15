@@ -96,10 +96,13 @@ enum class Button : uint8_t
     Copy,
     Insert,
     Rec,
-    Deck0, // NOTE, INSTRUMENT, FX1, FX2: jump straight to a deck
-    Deck1,
+    Deck0, // NOTE, INSTRUMENT, FX1, FX2, MASTER, FILE, CONFIG: jump straight
+    Deck1, // to CUT, GRADE, HUB, STATIC, MIXER, FILE, SETUP
     Deck2,
     Deck3,
+    Deck4,
+    Deck5,
+    Deck6,
 };
 
 enum class Sfx : uint8_t
@@ -154,6 +157,10 @@ class Game
     virtual void pad(uint8_t pad, bool down) { (void)pad; (void)down; }
     virtual void button(Button b, bool down) { (void)b; (void)down; }
     virtual void jog(int16_t steps) { (void)steps; }
+    // MIDI from the computer (main loop, not interrupt): a short message, or
+    // a whole system exclusive message (F0 ... F7).
+    virtual void midiIn(uint8_t status, uint8_t d1, uint8_t d2) { (void)status; (void)d1; (void)d2; }
+    virtual void sysexIn(const uint8_t* data, uint16_t length) { (void)data; (void)length; }
     // Label for screen button 0-6 (button 7 is always Exit). nullptr = blank.
     virtual const char* buttonLabel(uint8_t i) const { (void)i; return nullptr; }
     // True when the game wants to return to the arcade menu.

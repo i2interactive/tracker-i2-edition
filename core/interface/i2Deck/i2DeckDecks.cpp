@@ -6,7 +6,10 @@
 //
 //   DECK <name>            name on screen (7 letters)
 //   APP <text>             what it drives
-//   LINK KEYS|MIDI|RADIO   keyboard shortcuts, MIDI, or the FM tuner
+//   LINK KEYS|MIDI|RADIO|MCU
+//                          keyboard shortcuts, MIDI, the FM tuner, or a
+//                          Mackie Control surface (pads with @ actions;
+//                          pads with a shortcut still send keys)
 //   REV <n>                version of a built-in deck: when the firmware's
 //                          REV is higher than the card's, the card's file
 //                          is kept as <name>-old.txt and replaced
@@ -21,8 +24,9 @@
 //                          a job for the jog wheel (screen buttons 1-7 pick it).
 //                          Screen button 8 is always HOME. In a deck with more
 //                          than one page, button 7 turns the page, so use
-//                          dials 1-6 there. In GRADE, button 6 switches
-//                          between Resolve and Premiere, so dial 6 is unused.
+//                          dials 1-6 there. In GRADE, MIXER, FILE and SETUP,
+//                          button 6 switches between Resolve and Premiere,
+//                          so dial 6 is unused.
 
 namespace i2deck
 {
@@ -460,17 +464,465 @@ DIAL 2 AMOUNT | @AMOUNT
 DIAL 3 LENGTH | @LENGTH
 DIAL 4 VOLUME | @VOLUME
 )DECK";
+const char kMixerRes[] = R"DECK(# i2 DECK - MIXER, Resolve side: the Fairlight mixer as a Mackie Control
+# surface (MCU) over the Tracker's USB MIDI port, plus a few keys.
+# Screen button 6 switches MIXER, FILE and SETUP to Premiere (mixerpr.txt).
+# Notes: tools/i2deck/APP_DECKS.md.  [OK] checked in Blackmagic's manual,
+# [??] a guess: check it, [SET] no default: assign it in Resolve.
+#
+# Set up once [OK]: Preferences > System > Control Panels: tick Use MIDI
+# Audio Console; MIDI Protocol MCU; MIDI Input and MIDI Output: the Tracker.
+# Resolve's MCU support [OK]: faders, pan, rec arm, solo, mute, select,
+# bank, transport. MARK and UNDO depend on the panel [??]; JOG [OK].
+#
+# Pads: @REC1-8 @SOLO1-8 @MUTE1-8 @SEL1-8 are the strip buttons. @BANK-
+# and @BANK+ move 8 tracks, @CH- and @CH+ one. @REW @FF @STOP @PLAY
+# @RECORD @CYCLE @MARKER @UNDO; @N<0-127> sends any Mackie Control note.
+# A lit pad is a lit LED in Resolve. A strip pad also picks the strip the
+# wheel works on. Wheel: @FADER @PAN @STRIP (pick the strip) @JOG @MASTER.
+# Keys: FAIR / EDIT pages (Shift+7 / Shift+4) [OK]; clip level +/- 1 dB
+# (Option+Cmd+= / -) [??].
+DECK MIXER
+REV 1
+APP Resolve Fairlight
+LINK MCU
+COLOR 46D2E6
+
+PAGE MIX
+BLOCK 1 TRACKS 1-4
+K REC1 REC ARM 1 | @REC1
+K REC2 REC ARM 2 | @REC2
+K REC3 REC ARM 3 | @REC3
+K REC4 REC ARM 4 | @REC4
+K SOL1 SOLO 1 | @SOLO1
+K SOL2 SOLO 2 | @SOLO2
+K SOL3 SOLO 3 | @SOLO3
+K SOL4 SOLO 4 | @SOLO4
+K MUT1 MUTE 1 | @MUTE1
+K MUT2 MUTE 2 | @MUTE2
+K MUT3 MUTE 3 | @MUTE3
+K MUT4 MUTE 4 | @MUTE4
+K SEL1 SELECT 1 | @SEL1
+K SEL2 SELECT 2 | @SEL2
+K SEL3 SELECT 3 | @SEL3
+K SEL4 SELECT 4 | @SEL4
+BLOCK 2 TRACKS 5-8
+K REC5 REC ARM 5 | @REC5
+K REC6 REC ARM 6 | @REC6
+K REC7 REC ARM 7 | @REC7
+K REC8 REC ARM 8 | @REC8
+K SOL5 SOLO 5 | @SOLO5
+K SOL6 SOLO 6 | @SOLO6
+K SOL7 SOLO 7 | @SOLO7
+K SOL8 SOLO 8 | @SOLO8
+K MUT5 MUTE 5 | @MUTE5
+K MUT6 MUTE 6 | @MUTE6
+K MUT7 MUTE 7 | @MUTE7
+K MUT8 MUTE 8 | @MUTE8
+K SEL5 SELECT 5 | @SEL5
+K SEL6 SELECT 6 | @SEL6
+K SEL7 SELECT 7 | @SEL7
+K SEL8 SELECT 8 | @SEL8
+BLOCK 3 BANK + PLAY
+K BNK- BANK -8   | @BANK-
+K BNK+ BANK +8   | @BANK+
+K CH-  BANK -1   | @CH-
+K CH+  BANK +1   | @CH+
+K REW  REWIND    | @REW
+K FF   FAST FWD  | @FF
+K STOP STOP      | @STOP
+K PLAY PLAY      | @PLAY
+K REC  RECORD    | @RECORD
+K LOOP CYCLE     | @CYCLE
+K MARK MARKER    | @MARKER
+K UNDO UNDO      | @UNDO
+K FAIR FAIRLIGHT | SHIFT+7
+K EDIT EDIT PAGE | SHIFT+4
+K VOL+ CLIP +1DB | CMD+OPT+=
+K VOL- CLIP -1DB | CMD+OPT+-
+DIAL 1 FADER    | @FADER
+DIAL 2 PAN      | @PAN
+DIAL 3 TRACK    | @STRIP
+DIAL 4 JOG      | @JOG
+DIAL 5 CLIP VOL | CMD+OPT+= | CMD+OPT+-
+DIAL 7 MASTER   | @MASTER
+)DECK";
+
+const char kMixerPr[] = R"DECK(# i2 DECK - MIXER, Premiere side: the Audio Track Mixer as a Mackie
+# Control surface over the Tracker's USB MIDI port, plus a few keys.
+# Screen button 6 switches MIXER, FILE and SETUP to Resolve (mixerres.txt).
+# Notes: tools/i2deck/APP_DECKS.md.  [OK] checked in Adobe's pages, [??] a
+# guess: check it, [SET] no default: assign it in Premiere.
+#
+# Set up once [OK]: Premiere Pro > Settings (Windows: Edit > Preferences)
+# > Control Surface > Add > Mackie; select it, Edit, and pick the Tracker
+# as MIDI Input Device and MIDI Output Device.
+# Premiere's Mackie support drives the Audio Track Mixer [OK]: faders,
+# pan, mute, solo, play/record [OK]; banks work in the Track Mixer [OK].
+# REC arm, SELECT, MARK, UNDO, CYCLE, JOG and MASTER: [??].
+#
+# Pads: @REC1-8 @SOLO1-8 @MUTE1-8 @SEL1-8 are the strip buttons. @BANK-
+# and @BANK+ move 8 tracks, @CH- and @CH+ one. @REW @FF @STOP @PLAY
+# @RECORD @CYCLE @MARKER @UNDO; @N<0-127> sends any Mackie Control note.
+# A lit pad is a lit LED in Premiere. A strip pad also picks the strip the
+# wheel works on. Wheel: @FADER @PAN @STRIP (pick the strip) @JOG @MASTER.
+# Keys [OK]: Audio Track Mixer Shift+6, Audio Clip Mixer Shift+9, clip
+# volume +1 dB ] and -1 dB [ (Shift = 6 dB).
+DECK MIXER
+REV 1
+APP Premiere mixer
+LINK MCU
+COLOR 46D2E6
+
+PAGE MIX
+BLOCK 1 TRACKS 1-4
+K REC1 REC ARM 1 | @REC1
+K REC2 REC ARM 2 | @REC2
+K REC3 REC ARM 3 | @REC3
+K REC4 REC ARM 4 | @REC4
+K SOL1 SOLO 1 | @SOLO1
+K SOL2 SOLO 2 | @SOLO2
+K SOL3 SOLO 3 | @SOLO3
+K SOL4 SOLO 4 | @SOLO4
+K MUT1 MUTE 1 | @MUTE1
+K MUT2 MUTE 2 | @MUTE2
+K MUT3 MUTE 3 | @MUTE3
+K MUT4 MUTE 4 | @MUTE4
+K SEL1 SELECT 1 | @SEL1
+K SEL2 SELECT 2 | @SEL2
+K SEL3 SELECT 3 | @SEL3
+K SEL4 SELECT 4 | @SEL4
+BLOCK 2 TRACKS 5-8
+K REC5 REC ARM 5 | @REC5
+K REC6 REC ARM 6 | @REC6
+K REC7 REC ARM 7 | @REC7
+K REC8 REC ARM 8 | @REC8
+K SOL5 SOLO 5 | @SOLO5
+K SOL6 SOLO 6 | @SOLO6
+K SOL7 SOLO 7 | @SOLO7
+K SOL8 SOLO 8 | @SOLO8
+K MUT5 MUTE 5 | @MUTE5
+K MUT6 MUTE 6 | @MUTE6
+K MUT7 MUTE 7 | @MUTE7
+K MUT8 MUTE 8 | @MUTE8
+K SEL5 SELECT 5 | @SEL5
+K SEL6 SELECT 6 | @SEL6
+K SEL7 SELECT 7 | @SEL7
+K SEL8 SELECT 8 | @SEL8
+BLOCK 3 BANK + PLAY
+K BNK- BANK -8   | @BANK-
+K BNK+ BANK +8   | @BANK+
+K CH-  BANK -1   | @CH-
+K CH+  BANK +1   | @CH+
+K REW  REWIND    | @REW
+K FF   FAST FWD  | @FF
+K STOP STOP      | @STOP
+K PLAY PLAY      | @PLAY
+K REC  RECORD    | @RECORD
+K LOOP CYCLE     | @CYCLE
+K MARK MARKER    | @MARKER
+K UNDO UNDO      | @UNDO
+K MIX  TRACK MIX | SHIFT+6
+K CMIX CLIP MIX  | SHIFT+9
+K VOL+ CLIP +1DB | ]
+K VOL- CLIP -1DB | [
+DIAL 1 FADER    | @FADER
+DIAL 2 PAN      | @PAN
+DIAL 3 TRACK    | @STRIP
+DIAL 4 JOG      | @JOG
+DIAL 5 CLIP VOL | ] | [
+DIAL 7 MASTER   | @MASTER
+)DECK";
+
+const char kFileRes[] = R"DECK(# i2 DECK - FILE, Resolve side: DaVinci Resolve's File menu and Deliver.
+# Screen button 6 switches MIXER, FILE and SETUP to Premiere (filepr.txt).
+# Notes: tools/i2deck/APP_DECKS.md.
+#   [OK] PMGR (Shift+1), SAVE, IMTL (Shift+Cmd+I), MEDP DLVR EDIT CUTP
+#        (Shift+2 / 8 / 4 / 3), UNDO REDO
+#   [??] SVAS NTL NBIN IMP EXPJ EXTL QUIT: from third-party lists; check
+#        them in DaVinci Resolve > Keyboard Customization
+#   [SET] no default: NPRJ IMPJ MGMT RLNK QEXP ADDQ RNDR send
+#         Control+Option+Shift (Windows: Ctrl+Alt+Shift) + a letter. Give
+#         each command that key in Keyboard Customization (File > New
+#         Project, Import Project, Media Management, Relink Media, Quick
+#         Export; Deliver: Add to Render Queue, Render All).
+DECK FILE
+REV 1
+APP DaVinci Resolve
+LINK KEYS
+COLOR F2D25C
+
+PAGE FILE
+BLOCK 1 PROJECT
+K PMGR PROJ MGR  | SHIFT+1
+K NPRJ NEW PROJ  | CTRL+OPT+SHIFT+N
+K SAVE SAVE      | CMD+S
+K SVAS SAVE AS   | CMD+SHIFT+S
+K IMPJ IMPORT PRJ| CTRL+OPT+SHIFT+J
+K EXPJ EXPORT PRJ| CMD+E
+K QUIT QUIT      | CMD+Q
+K -
+K -
+K -
+K -
+K -
+K UNDO UNDO      | CMD+Z
+K REDO REDO      | CMD+SHIFT+Z
+K ENT  ENTER     | ENTER
+K ESC  ESCAPE    | ESC
+BLOCK 2 NEW + IMPORT
+K NTL  NEW TIMELN| CMD+N
+K NBIN NEW BIN   | CMD+SHIFT+N
+K IMP  IMPORT    | CMD+I
+K IMTL IMPORT TL | CMD+SHIFT+I
+K MEDP MEDIA PAGE| SHIFT+2
+K MGMT MEDIA MGMT| CTRL+OPT+SHIFT+M
+K RLNK RELINK    | CTRL+OPT+SHIFT+L
+K -
+K -
+K -
+K -
+K -
+K TAB  NEXT FIELD| TAB
+K STAB PREV FIELD| SHIFT+TAB
+K UP   UP        | UP
+K DOWN DOWN      | DOWN
+BLOCK 3 EXPORT + DELIVER
+K DLVR DELIVER PG| SHIFT+8
+K EXTL EXPORT TL | CMD+SHIFT+O
+K QEXP QUICK EXP | CTRL+OPT+SHIFT+Q
+K ADDQ ADD TO Q  | CTRL+OPT+SHIFT+A
+K RNDR RENDER ALL| CTRL+OPT+SHIFT+R
+K -
+K EDIT EDIT PAGE | SHIFT+4
+K CUTP CUT PAGE  | SHIFT+3
+DIAL 1 LIST     | DOWN | UP
+DIAL 2 FIELDS   | TAB | SHIFT+TAB
+DIAL 3 LEFT/RT  | RIGHT | LEFT
+)DECK";
+
+const char kFilePr[] = R"DECK(# i2 DECK - FILE, Premiere side: Premiere Pro's File menu.
+# Screen button 6 switches MIXER, FILE and SETUP to Resolve (fileres.txt).
+# Notes: tools/i2deck/APP_DECKS.md. Every key is Premiere's default
+# [OK, Adobe's default shortcuts page] except:
+#   [??] FRAM (Export Frame), EXPM (Export mode, Option/Alt+4)
+#   [SET] no default: REVT MGMT LINK OFFL EDL XML AAF RAUD DREN send
+#         Control+Option+Shift (Windows: Ctrl+Alt+Shift) + a letter. In
+#         Premiere's Keyboard Shortcuts, give each command the key shown
+#         here (File > Revert, File > Project Manager, Clip > Link Media,
+#         Clip > Make Offline, File > Export > EDL / Final Cut Pro XML /
+#         AAF, Sequence > Render Audio, Sequence > Delete Render Files).
+DECK FILE
+REV 1
+APP Premiere Pro
+LINK KEYS
+COLOR F2D25C
+
+PAGE FILE
+BLOCK 1 PROJECT
+K NPRJ NEW PROJ  | CMD+OPT+N
+K OPEN OPEN PROJ | CMD+O
+K SAVE SAVE      | CMD+S
+K SVAS SAVE AS   | CMD+SHIFT+S
+K COPY SAVE COPY | CMD+OPT+S
+K CLOS CLOSE     | CMD+W
+K CLPJ CLOSE PRJ | CMD+SHIFT+W
+K QUIT QUIT      | CMD+Q
+K REVT REVERT    | CTRL+OPT+SHIFT+R
+K MGMT PROJ MGR  | CTRL+OPT+SHIFT+P
+K PROP PROPERTIES| CMD+SHIFT+H
+K -
+K UNDO UNDO      | CMD+Z
+K REDO REDO      | CMD+SHIFT+Z
+K ENT  ENTER     | ENTER
+K ESC  ESCAPE    | ESC
+BLOCK 2 NEW + IMPORT
+K NSEQ NEW SEQ   | CMD+N
+K NBIN NEW BIN   | CMD+B
+K IMP  IMPORT    | CMD+I
+K IMB  IMPORT MB | CMD+OPT+I
+K PROJ PROJECTS  | SHIFT+1
+K MBRW MEDIA BRWS| SHIFT+8
+K SRC  TO SOURCE | SHIFT+O
+K -
+K LINK LINK MEDIA| CTRL+OPT+SHIFT+L
+K OFFL OFFLINE   | CTRL+OPT+SHIFT+O
+K -
+K -
+K TAB  NEXT FIELD| TAB
+K STAB PREV FIELD| SHIFT+TAB
+K UP   UP        | UP
+K DOWN DOWN      | DOWN
+BLOCK 3 EXPORT + RENDER
+K EXP  EXPORT    | CMD+M
+K AME  TO ENCODER| OPT+SHIFT+M
+K FRAM EXPORT FRM| CMD+SHIFT+E
+K EXPM EXPORT MOD| OPT+4
+K EDL  EXPORT EDL| CTRL+OPT+SHIFT+E
+K XML  EXPORT XML| CTRL+OPT+SHIFT+X
+K AAF  EXPORT AAF| CTRL+OPT+SHIFT+F
+K -
+K REND RENDER I/O| ENTER
+K RAUD RENDER AUD| CTRL+OPT+SHIFT+A
+K DREN DEL RENDER| CTRL+OPT+SHIFT+D
+DIAL 1 LIST     | DOWN | UP
+DIAL 2 FIELDS   | TAB | SHIFT+TAB
+DIAL 3 LEFT/RT  | RIGHT | LEFT
+)DECK";
+
+const char kSetupRes[] = R"DECK(# i2 DECK - SETUP, Resolve side: DaVinci Resolve's settings and caches.
+# Screen button 6 switches MIXER, FILE and SETUP to Premiere (setuppr.txt).
+# Notes: tools/i2deck/APP_DECKS.md.
+#   [OK] KEYS (Keyboard Customization, Cmd+Option+K), PSET (Project
+#        Settings, Shift+9), PMGR (Shift+1), the page keys (Shift+2-8),
+#        the dialog keys
+#   [??] PREF (Preferences, Cmd+comma), CNMA (Cinema viewer, P)
+#   [SET] no default: TLST RCOF RCSM RCUS RCCO DRC PRXY OPTM send
+#         Control+Option+Shift (Windows: Ctrl+Alt+Shift) + a letter. Give
+#         each command that key in Keyboard Customization (Timeline
+#         Settings; Playback > Render Cache > None / Smart / User; Clip >
+#         Render Cache Color Output; Playback > Delete Render Cache > All;
+#         Playback > Use Proxy Media if Available; Use Optimized Media if
+#         Available).
+DECK SETUP
+REV 1
+APP DaVinci Resolve
+LINK KEYS
+COLOR F28FB8
+
+PAGE SETUP
+BLOCK 1 SETTINGS
+K PREF PREFS     | CMD+,
+K KEYS SHORTCUTS | CMD+OPT+K
+K PSET PROJ SET  | SHIFT+9
+K PMGR PROJ MGR  | SHIFT+1
+K TLST TL SETTING| CTRL+OPT+SHIFT+T
+K -
+K -
+K -
+K RCOF CACHE NONE| CTRL+OPT+SHIFT+O
+K RCSM CACHE SMRT| CTRL+OPT+SHIFT+S
+K RCUS CACHE USER| CTRL+OPT+SHIFT+U
+K RCCO CACHE CLIP| CTRL+OPT+SHIFT+C
+K DRC  DEL CACHE | CTRL+OPT+SHIFT+D
+K PRXY PROXY     | CTRL+OPT+SHIFT+P
+K OPTM OPTIMIZED | CTRL+OPT+SHIFT+Z
+BLOCK 2 PAGES
+K MEDP MEDIA     | SHIFT+2
+K CUTP CUT       | SHIFT+3
+K EDIT EDIT      | SHIFT+4
+K FUSN FUSION    | SHIFT+5
+K COLR COLOR     | SHIFT+6
+K FAIR FAIRLIGHT | SHIFT+7
+K DLVR DELIVER   | SHIFT+8
+K CNMA CINEMA    | P
+BLOCK 3 DIALOG
+K ENT  ENTER     | ENTER
+K ESC  ESCAPE    | ESC
+K TAB  NEXT FIELD| TAB
+K STAB PREV FIELD| SHIFT+TAB
+K UP   UP        | UP
+K DOWN DOWN      | DOWN
+K LEFT LEFT      | LEFT
+K RGHT RIGHT     | RIGHT
+K SPC  SPACE     | SPACE
+K -
+K UNDO UNDO      | CMD+Z
+K SAVE SAVE      | CMD+S
+DIAL 1 LIST     | DOWN | UP
+DIAL 2 FIELDS   | TAB | SHIFT+TAB
+DIAL 3 LEFT/RT  | RIGHT | LEFT
+)DECK";
+
+const char kSetupPr[] = R"DECK(# i2 DECK - SETUP, Premiere side: Premiere Pro's settings dialogs.
+# Screen button 6 switches MIXER, FILE and SETUP to Resolve (setupres.txt).
+# Notes: tools/i2deck/APP_DECKS.md.
+#   [OK] KEYS (Keyboard Shortcuts, Cmd+Option+K), REND, MAX, FULL and the
+#        dialog keys
+#   [??] EDIT COLR EXPT (Window > Mode, Option/Alt+2/3/4), WSRS (Reset to
+#        Saved Layout, Option/Alt+Shift+0)
+#   [SET] Premiere has no default for the settings pages: PREF AUD AHW
+#         MEDI MCAC PLAY TIME AUTO SURF PSET SCR SSET PMGR RAUD DREN send
+#         Control+Option+Shift (Windows: Ctrl+Alt+Shift) + a letter. Give
+#         each command that key in Keyboard Shortcuts (Premiere Pro >
+#         Settings > General / Audio / Audio Hardware / Media / Media
+#         Cache / Playback / Timeline / Auto Save / Control Surface; File >
+#         Project Settings > General / Scratch Disks; Sequence > Sequence
+#         Settings; File > Project Manager; Sequence > Render Audio /
+#         Delete Render Files). On Windows these are under Edit >
+#         Preferences.
+DECK SETUP
+REV 1
+APP Premiere Pro
+LINK KEYS
+COLOR F28FB8
+
+PAGE SETUP
+BLOCK 1 SETTINGS
+K PREF GENERAL   | CTRL+OPT+SHIFT+G
+K KEYS SHORTCUTS | CMD+OPT+K
+K AUD  AUDIO     | CTRL+OPT+SHIFT+U
+K AHW  AUDIO HW  | CTRL+OPT+SHIFT+H
+K MEDI MEDIA     | CTRL+OPT+SHIFT+I
+K MCAC MEDIA CACH| CTRL+OPT+SHIFT+C
+K PLAY PLAYBACK  | CTRL+OPT+SHIFT+B
+K TIME TIMELINE  | CTRL+OPT+SHIFT+T
+K AUTO AUTO SAVE | CTRL+OPT+SHIFT+V
+K SURF CTRL SURF | CTRL+OPT+SHIFT+S
+BLOCK 2 PROJECT + VIEW
+K PSET PROJ SET  | CTRL+OPT+SHIFT+J
+K SCR  SCRATCH   | CTRL+OPT+SHIFT+W
+K SSET SEQ SET   | CTRL+OPT+SHIFT+Q
+K PMGR PROJ MGR  | CTRL+OPT+SHIFT+P
+K REND RENDER I/O| ENTER
+K RAUD RENDER AUD| CTRL+OPT+SHIFT+A
+K DREN DEL RENDER| CTRL+OPT+SHIFT+D
+K -
+K EDIT EDIT MODE | OPT+2
+K COLR COLOR MODE| OPT+3
+K EXPT EXPORT MOD| OPT+4
+K WSRS RESET WS  | OPT+SHIFT+0
+K MAX  MAXIMIZE  | SHIFT+`
+K FULL FULLSCRN  | CTRL+`
+BLOCK 3 DIALOG
+K ENT  ENTER     | ENTER
+K ESC  ESCAPE    | ESC
+K TAB  NEXT FIELD| TAB
+K STAB PREV FIELD| SHIFT+TAB
+K UP   UP        | UP
+K DOWN DOWN      | DOWN
+K LEFT LEFT      | LEFT
+K RGHT RIGHT     | RIGHT
+K SPC  SPACE     | SPACE
+K -
+K UNDO UNDO      | CMD+Z
+K SAVE SAVE      | CMD+S
+DIAL 1 LIST     | DOWN | UP
+DIAL 2 FIELDS   | TAB | SHIFT+TAB
+DIAL 3 LEFT/RT  | RIGHT | LEFT
+)DECK";
+
 } // namespace
 
-const BuiltinDeck kGradePremiereDeck = { "gradepr.txt", "GRADE", "PREMIERE", "Resolve or", "Premiere color.", "USB KEYS", 0xB48CFF, kGradePremiere, nullptr };
+const BuiltinDeck kGradePremiereDeck = { "gradepr.txt", "GRADE", "PREMIERE", "Resolve or", "Premiere color.", "USB KEYS", 0xB48CFF, kGradePremiere, nullptr, 0 };
+
+// MIXER, FILE and SETUP: Resolve first (the top of the switch), Premiere
+// second, like GRADE. They share app= in settings.txt (Premiere unless set).
+const BuiltinDeck kMixerPrDeck = { "mixerpr.txt", "MIXER", "PREMIERE", "Faders, mute,", "solo, banks.", "MACKIE MCU", 0x46D2E6, kMixerPr, nullptr, 1 };
+const BuiltinDeck kFilePrDeck = { "filepr.txt", "FILE", "PREMIERE", "New, open,", "save, export.", "USB KEYS", 0xF2D25C, kFilePr, nullptr, 1 };
+const BuiltinDeck kSetupPrDeck = { "setuppr.txt", "SETUP", "PREMIERE", "Settings,", "caches, keys.", "USB KEYS", 0xF28FB8, kSetupPr, nullptr, 1 };
 
 const BuiltinDeck kBuiltin[kBuiltinDecks] = {
-    { "cut.txt", "CUT", "PREMIERE", "Edit, trim,", "move, mark.", "USB KEYS", 0x7FB2FF, kCut, nullptr },
-    { "grade.txt", "GRADE", "RESOLVE", "Resolve or", "Premiere color.", "USB KEYS", 0xFFB454, kGrade, &kGradePremiereDeck },
-    { "hub.txt", "HUB", "CREATIVE HUB", "Queue, slots,", "seeds, sizes.", "USB MIDI", 0x5BE3A5, kHub, nullptr },
-    { "static.txt", "STATIC", "FM RADIO", "Tune, hear,", "glitch it.", "ANTENNA", 0xFF5A3C, kStatic, nullptr },
+    { "cut.txt", "CUT", "PREMIERE", "Edit, trim,", "move, mark.", "USB KEYS", 0x7FB2FF, kCut, nullptr, 0 },
+    { "grade.txt", "GRADE", "RESOLVE", "Resolve or", "Premiere color.", "USB KEYS", 0xFFB454, kGrade, &kGradePremiereDeck, 0 },
+    { "hub.txt", "HUB", "CREATIVE HUB", "Queue, slots,", "seeds, sizes.", "USB MIDI", 0x5BE3A5, kHub, nullptr, 0 },
+    { "static.txt", "STATIC", "FM RADIO", "Tune, hear,", "glitch it.", "ANTENNA", 0xFF5A3C, kStatic, nullptr, 0 },
+    { "mixerres.txt", "MIXER", "RESOLVE", "Faders, mute,", "solo, banks.", "MACKIE MCU", 0x46D2E6, kMixerRes, &kMixerPrDeck, 1 },
+    { "fileres.txt", "FILE", "RESOLVE", "New, open,", "save, export.", "USB KEYS", 0xF2D25C, kFileRes, &kFilePrDeck, 1 },
+    { "setupres.txt", "SETUP", "RESOLVE", "Settings,", "caches, keys.", "USB KEYS", 0xF28FB8, kSetupRes, &kSetupPrDeck, 1 },
 };
 
-const BuiltinDeck* const kAll[kAllDecks] = { &kBuiltin[0], &kBuiltin[1], &kGradePremiereDeck, &kBuiltin[2], &kBuiltin[3] };
+const BuiltinDeck* const kAll[kAllDecks] = { &kBuiltin[0], &kBuiltin[1], &kGradePremiereDeck, &kBuiltin[2], &kBuiltin[3], &kBuiltin[4],
+                                             &kMixerPrDeck, &kBuiltin[5], &kFilePrDeck, &kBuiltin[6], &kSetupPrDeck };
 
 } // namespace i2deck

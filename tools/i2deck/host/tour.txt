@@ -222,3 +222,176 @@ restart
 expectlocked 1
 screen 5
 expectleft 0
+# ---- MASTER / FILE / CONFIG: MIXER, FILE, SETUP; the second home page (button 8)
+screen 8
+wait 2
+expecthome 1
+shot 16_home_page2
+screen 8
+wait 2
+expecthome 0
+screen 8
+screen 1
+wait 2
+expectdeck 4
+screen 8
+expecthome 1
+screen 8
+# MASTER opens MIXER (Premiere is the default side), even while locked
+expectlocked 1
+btn master
+wait 3
+expectdeck 4
+expectfile mixerpr.txt
+shot 17_mixer_waiting
+# strip pads: press / release as Mackie notes (MUTE 1 = note 16)
+mark
+pad 24
+expectsent midi 90 10 7f
+expectsent midi 90 10 00
+# SELECT 6 picks strip 6 for the wheel; FADER with no position from the host starts at 0
+pad 41
+mark
+jogfor 1 2
+expectsent midi 90 6d 7f
+expectsent midi e5 00 01
+expectsent midi e5 00 02
+expectfader 5 256
+wait 30
+expectsent midi 90 6d 00
+# the host answers: device query, faders, LEDs, meters, display
+mark
+sysex f0 00 00 66 14 00 f7
+expectsent sysex f0 00 00 66 14 01 49 32 44 45 43 4b 31 00 00 00 00 f7
+midi e0 00 60
+midi e1 00 50
+midi e5 00 70
+midi e8 00 66
+expectfader 0 12288
+expectfader 5 14336
+midi 90 10 7f
+midi 90 09 7f
+midi 90 1d 7f
+midi 90 02 01
+expectled 16 1
+midi d0 0b
+midi d0 1c
+midi d0 25
+midi d0 4a
+midi d0 59
+midi b0 35 16
+sysex f0 00 00 66 14 12 00 "Dialog Music  SFX    VO     Room   Amb    Score  Temp   " f7
+wait 2
+shot 18_mixer_premiere
+midi 90 10 00
+expectled 16 0
+# PAN on strip 6, anticlockwise 3 = 64 + 3
+screen 2
+mark
+jog -3
+expectsent midi b0 15 43
+# TRACK picks strip 7; JOG is CC 60
+screen 3
+jog 1
+screen 4
+mark
+jog 2
+expectsent midi b0 3c 02
+# MASTER: touch 112, pitch bend on channel 9
+screen 7
+mark
+jog -1
+expectsent midi 90 70 7f
+expectsent midi e8 00 65
+# a key pad in MIXER: Audio Track Mixer, Shift+6
+mark
+pad 44
+expectsent key down 23 mods 2
+expectheld 0
+# leaving with a pad and the fader held lets go of both
+paddown 25
+screen 1
+jog 1
+mark
+btn file
+wait 3
+expectsent midi 90 11 00
+expectsent midi 90 69 00
+expectdeck 5
+expectheld 0
+btn master
+wait 3
+allpads
+expectheld 0
+# button 6: Resolve side (shared with FILE and SETUP)
+screen 6
+wait 3
+expectfile mixerres.txt
+expectcard settings.txt app=resolve
+shot 19_mixer_resolve
+allpads
+expectheld 0
+# FILE: Resolve, then Premiere
+btn file
+wait 3
+expectdeck 5
+expectfile fileres.txt
+shot 20_file_resolve
+allpads
+expectheld 0
+screen 6
+wait 3
+expectfile filepr.txt
+expectcard settings.txt app=premiere
+shot 21_file_premiere
+paddown 0
+jogfor 1 3
+shot 21b_file_premiere_held
+padup 0
+allpads
+screen 2
+jogfor -1 3
+expectheld 0
+# CONFIG opens SETUP (Premiere now), then Resolve
+btn config
+wait 3
+expectdeck 6
+expectfile setuppr.txt
+shot 22_setup_premiere
+allpads
+expectheld 0
+screen 6
+wait 3
+expectfile setupres.txt
+shot 23_setup_resolve
+allpads
+expectheld 0
+# GRADE keeps its own choice
+btn instr
+wait 3
+expectdeck 1
+expectcard settings.txt grade=resolve
+# HOME from a page-2 deck lands on page 2
+btn config
+wait 2
+screen 8
+wait 2
+expecthome 1
+shot 24_home_page2_resolve
+# the hotkeys work unlocked too
+shift 1
+rec 1
+wait 130
+rec 0
+shift 0
+expectlocked 0
+btn master
+wait 2
+expectdeck 4
+btn note
+wait 2
+expectdeck 0
+screen 8
+wait 2
+expecthome 0
+expectheld 0

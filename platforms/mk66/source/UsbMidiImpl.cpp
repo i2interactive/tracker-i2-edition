@@ -60,3 +60,17 @@ void UsbMidiImpl::setReceiveActions(MidiReceiveActions* receiveActions)
     usbMIDI.setHandleSongPosition(receiveActions->songPosition);
     usbMIDI.setHandleControlChange(receiveActions->controlChange);
 }
+
+// i2 edition: pitch bend, channel pressure and sysex for i2 DECK's MIXER
+void UsbMidiImpl::setExtraReceiveActions(const ExtraReceiveActions* actions)
+{
+    usbMIDI.setHandlePitchChange(actions ? actions->pitchBend : nullptr);
+    usbMIDI.setHandleAfterTouchChannel(actions ? actions->channelPressure : nullptr);
+    usbMIDI.setHandleSysEx(actions ? actions->sysEx : static_cast<void (*)(const uint8_t*, uint16_t, bool)>(nullptr));
+}
+
+void UsbMidiImpl::sendSysEx(const uint8_t* data, uint16_t length)
+{
+    usbMIDI.sendSysEx(length, data, true); // data holds F0 ... F7
+    usbMIDI.send_now();
+}

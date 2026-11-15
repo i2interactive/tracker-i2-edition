@@ -243,6 +243,18 @@ class HostIo : public DeckIo
     }
     void midiNote(uint8_t note, bool on, uint8_t channel) override { say("note %s %d ch %d", on ? "on " : "off", note, channel); }
     void midiCc(uint8_t cc, uint8_t value, uint8_t channel) override { say("cc %d = %d ch %d", cc, value, channel); }
+    void midiShort(uint8_t status, uint8_t d1, uint8_t d2) override { say("midi %02x %02x %02x", status, d1, d2); }
+    void midiSysex(const uint8_t* data, uint16_t length) override
+    {
+        std::string t = "sysex";
+        char b[8];
+        for (uint16_t i = 0; i < length; i++)
+        {
+            snprintf(b, sizeof(b), " %02x", data[i]);
+            t += b;
+        }
+        log += t + "\n";
+    }
     void radioPower(bool on) override
     {
         power = on;
@@ -307,7 +319,8 @@ static bool nameToButton(const char* n, Button& b)
               { "up", Button::Up },         { "down", Button::Down },   { "delete", Button::Delete },
               { "copy", Button::Copy },     { "insert", Button::Insert }, { "rec", Button::Rec },
               { "note", Button::Deck0 },    { "instr", Button::Deck1 },  { "fx1", Button::Deck2 },
-              { "fx2", Button::Deck3 } };
+              { "fx2", Button::Deck3 },     { "master", Button::Deck4 }, { "file", Button::Deck5 },
+              { "config", Button::Deck6 } };
     for (auto& e : k)
     {
         if (!strcmp(n, e.name))
@@ -351,7 +364,8 @@ int main(int argc, char** argv)
                 {
                     const PadDef& pd = d.pages[p].pads[k];
                     if (!pd.used()) continue;
-                    if (d.link == kLinkKeys && (pd.mac.isEmpty() || pd.win.isEmpty()))
+                    bool keyless = pd.mac.isEmpty() || pd.win.isEmpty();
+                    if ((d.link == kLinkKeys && keyless) || (d.link == kLinkMcu && pd.act == kActNone && keyless))
                     {
                         printf("  !! %s page %d pad %d (%s) has no shortcut\n", d.name, p, k, pd.mn);
                         empty++;
@@ -367,7 +381,8 @@ int main(int argc, char** argv)
                     const DialDef& dd = d.pages[p].dials[k];
                     if (!dd.used()) continue;
                     dials++;
-                    if (d.link == kLinkKeys && (dd.cwMac.isEmpty() || dd.ccwMac.isEmpty() || dd.cwWin.isEmpty() || dd.ccwWin.isEmpty()))
+                    bool keyless = dd.cwMac.isEmpty() || dd.ccwMac.isEmpty() || dd.cwWin.isEmpty() || dd.ccwWin.isEmpty();
+                    if ((d.link == kLinkKeys && keyless) || (d.link == kLinkMcu && dd.act == kActNone && keyless))
                     {
                         printf("  !! %s page %d dial %d (%s) has no shortcut\n", d.name, p, k + 1, dd.name);
                         empty++;
@@ -468,6 +483,46 @@ int main(int argc, char** argv)
         bad |= problems > 0;
     }
 
+    // 4. Mackie Control encoding
+    {
+        int problems = 0;
+        auto check = [&](bool ok, const char* what) {
+            if (!ok)
+            {
+                printf("  !! mcu: %s\n", what);
+                problems++;
+            }
+        };
+        check(i2mcu::relative(1) == 0x01 && i2mcu::relative(5) == 0x05 && i2mcu::relative(63) == 0x3F && i2mcu::relative(99) == 0x3F, "clockwise ticks");
+        check(i2mcu::relative(-1) == 0x41 && i2mcu::relative(-5) == 0x45 && i2mcu::relative(-99) == 0x7F, "anticlockwise ticks");
+        uint8_t m[3];
+        i2mcu::fader(16383, 0, m);
+        check(m[0] == 0xE0 && m[1] == 0x7F && m[2] == 0x7F, "fader top, strip 1");
+        i2mcu::fader(8192, 2, m);
+        check(m[0] == 0xE2 && m[1] == 0x00 && m[2] == 0x40, "fader middle, strip 3");
+        i2mcu::fader(0, 8, m);
+        check(m[0] == 0xE8 && m[1] == 0 && m[2] == 0, "master fader bottom");
+        const uint8_t query[] = { 0xF0, 0x00, 0x00, 0x66, 0x14, 0x00, 0xF7 };
+        uint8_t out[20];
+        uint16_t n = i2mcu::reply(query, sizeof(query), out);
+        check(n == 18 && out[5] == 0x01 && out[4] == 0x14 && out[17] == 0xF7, "device query reply");
+        const uint8_t other[] = { 0xF0, 0x00, 0x00, 0x66, 0x05, 0x00, 0xF7 };
+        check(i2mcu::reply(other, sizeof(other), out) == 0, "ignores other models");
+        const uint8_t conn[] = { 0xF0, 0x00, 0x00, 0x66, 0x14, 0x02, 'I', '2', 'D', 'E', 'C', 'K', '1', 1, 2, 3, 4, 0xF7 };
+        n = i2mcu::reply(conn, sizeof(conn), out);
+        check(n == 14 && out[5] == 0x03, "connection confirmation");
+        // deck file names: @MUTE3 = note 18, @SEL8 = 31, @N100 = 100
+        static Deck d;
+        const char t[] = "DECK T\nLINK MCU\nK A A | @MUTE3\nK B B | @SEL8\nK C C | @N100\nK D D | @REC9\n";
+        parseDeck(t, strlen(t), d);
+        check(d.link == kLinkMcu, "LINK MCU");
+        check(d.pages[0].pads[0].act == kActMcu && d.pages[0].pads[0].arg == 18, "@MUTE3");
+        check(d.pages[0].pads[1].arg == 31 && d.pages[0].pads[2].arg == 100, "@SEL8, @N100");
+        check(d.pages[0].pads[3].act == kActNone, "@REC9 is not a strip");
+        printf("mcu encoding: %d problems\n", problems);
+        bad |= problems > 0;
+    }
+
     app.setIo(&io);
     app.begin(sv);
     uint32_t now = 1000;
@@ -526,6 +581,7 @@ int main(int argc, char** argv)
     };
 
     char line[256];
+    size_t mark = 0;
     while (fgets(line, sizeof(line), sc))
     {
         char cmd[32] = "";
@@ -660,6 +716,115 @@ int main(int argc, char** argv)
             {
                 printf("!! expected leave(%d), have %d\n", a, io.left);
                 bad = 1;
+            }
+        }
+        else if (!strcmp(cmd, "midi"))
+        {
+            // MIDI from the host: midi 90 10 7f (hex)
+            unsigned st = 0, d1 = 0, d2 = 0;
+            if (sscanf(line, "%*s %x %x %x", &st, &d1, &d2) >= 2) app.midiIn((uint8_t)st, (uint8_t)d1, (uint8_t)d2);
+            advance(1);
+        }
+        else if (!strcmp(cmd, "sysex"))
+        {
+            // sysex f0 00 00 66 14 12 00 41 42 f7 (hex), or with "text" after the offset
+            std::vector<uint8_t> bytes;
+            const char* q = line + 5;
+            while (*q)
+            {
+                while (*q == ' ') q++;
+                if (*q == '"')
+                {
+                    q++;
+                    while (*q && *q != '"') bytes.push_back((uint8_t)*q++);
+                    if (*q) q++;
+                    continue;
+                }
+                char* e2 = nullptr;
+                long v = strtol(q, &e2, 16);
+                if (e2 == q) break;
+                bytes.push_back((uint8_t)v);
+                q = e2;
+            }
+            app.sysexIn(bytes.data(), (uint16_t)bytes.size());
+            advance(1);
+        }
+        else if (!strcmp(cmd, "mark")) mark = io.log.size();
+        else if (!strcmp(cmd, "expectsent"))
+        {
+            // the log since the last "mark" contains this text
+            std::string t = strchr(line, ' ') ? strchr(line, ' ') + 1 : "";
+            while (!t.empty() && (t.back() == '\n' || t.back() == '\r')) t.pop_back();
+            if (io.log.find(t, mark) == std::string::npos)
+            {
+                printf("!! expected to send \"%s\"\n", t.c_str());
+                bad = 1;
+            }
+        }
+        else if (!strcmp(cmd, "expectnotsent"))
+        {
+            std::string t = strchr(line, ' ') ? strchr(line, ' ') + 1 : "";
+            while (!t.empty() && (t.back() == '\n' || t.back() == '\r')) t.pop_back();
+            if (io.log.find(t, mark) != std::string::npos)
+            {
+                printf("!! did not expect \"%s\"\n", t.c_str());
+                bad = 1;
+            }
+        }
+        else if (!strcmp(cmd, "expectfader") && sscanf(line, "%*s %d %d", &a, &b) == 2)
+        {
+            if (app.faderPos((uint8_t)a) != b)
+            {
+                printf("!! expected fader %d at %d, have %d\n", a, b, app.faderPos((uint8_t)a));
+                bad = 1;
+            }
+        }
+        else if (!strcmp(cmd, "expectled") && sscanf(line, "%*s %d %d", &a, &b) == 2)
+        {
+            if ((int)app.mcuLed((uint8_t)a) != b)
+            {
+                printf("!! expected led %d = %d\n", a, b);
+                bad = 1;
+            }
+        }
+        else if (!strcmp(cmd, "expecthome") && sscanf(line, "%*s %d", &a) == 1)
+        {
+            if (app.openDeckIndex() != -1 || app.homePageIndex() != a)
+            {
+                printf("!! expected home page %d, have deck %d page %d\n", a, app.openDeckIndex(), app.homePageIndex());
+                bad = 1;
+            }
+        }
+        else if (!strcmp(cmd, "expectfile"))
+        {
+            char fn[64] = "";
+            if (sscanf(line, "%*s %63s", fn) == 1)
+            {
+                std::string pth = sv.root + "/i2/Deck/" + fn;
+                FILE* f = fopen(pth.c_str(), "rb");
+                if (!f)
+                {
+                    printf("!! expected %s on the card\n", fn);
+                    bad = 1;
+                }
+                else fclose(f);
+            }
+        }
+        else if (!strcmp(cmd, "expectcard"))
+        {
+            // expectcard settings.txt app=resolve: the file on the card has this text
+            char fn[64] = "", want[96] = "";
+            if (sscanf(line, "%*s %63s %95s", fn, want) == 2)
+            {
+                char buf[4096];
+                std::string pth = std::string("i2/Deck/") + fn;
+                int32_t n = sv.loadText(pth.c_str(), buf, sizeof(buf) - 1);
+                buf[n > 0 ? n : 0] = 0;
+                if (n <= 0 || !strstr(buf, want))
+                {
+                    printf("!! expected \"%s\" in %s\n", want, fn);
+                    bad = 1;
+                }
             }
         }
         else if (!strcmp(cmd, "shot") && sscanf(line, "%*s %63s", name) == 1) shot(name);

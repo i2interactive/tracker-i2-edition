@@ -41,8 +41,10 @@ class cI2Deck : public ModuleBase
 
     // Lock: while locked, the Tracker's File and Config screens stay shut
     // (Interface::switchModuleByButton sends those buttons to i2 DECK).
-    // "lock=off" in settings.txt turns it off; Shift + Rec held with screen
-    // buttons 8-1-8 opens it until restart.
+    // "lock=off" in settings.txt turns it off; Shift + Rec held together for
+    // 2 s in i2 DECK opens it until restart. In i2 DECK itself File, Config
+    // and Master open the FILE, SETUP and MIXER decks, locked or not; the
+    // way to Polyend's Config is: unlock, PATTERN, then Config.
     static bool isLocked() { return locked; }
     static void setLocked(bool on) { locked = on; }
     void flashLocked();

@@ -50,6 +50,14 @@ void midiInit(UartMidi* uartMidi, UsbMidi* usbMidi)
     uartMidi->setReceiveActions(&uartMidiReceiveActions);
 
     // usb
+    midiUsbDefaultActions();
+}
+
+// The Tracker's own USB MIDI handlers (i2 DECK swaps them while it is open).
+void midiUsbDefaultActions()
+{
+    if (usbMidi == nullptr)
+        return;
     UsbMidi::MidiReceiveActions usbMidiReceiveActions;
     usbMidiReceiveActions.realTime = receiveUsbRealtime;
     usbMidiReceiveActions.noteOn = handleUsbNoteOn;
@@ -58,6 +66,7 @@ void midiInit(UartMidi* uartMidi, UsbMidi* usbMidi)
     usbMidiReceiveActions.controlChange = handleUSBControlChange;
 
     usbMidi->setReceiveActions(&usbMidiReceiveActions);
+    usbMidi->setExtraReceiveActions(nullptr);
 }
 
 void midiUpdate()

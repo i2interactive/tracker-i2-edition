@@ -9,6 +9,7 @@
 
 #include "core/songTimer.h"
 #include "mtAudioEngine.h"
+#include "mtMidi.h"
 
 #include "i2DeckApp.h"
 
@@ -180,6 +181,25 @@ class TrackerIo final : public i2deck::DeckIo
         UsbMidi* midi = platform ? platform->getUsbMidi() : nullptr;
         if (midi != nullptr) midi->sendControlChange(cc, value, channel);
     }
+    virtual void midiShort(uint8_t status, uint8_t d1, uint8_t d2) override
+    {
+        UsbMidi* midi = platform ? platform->getUsbMidi() : nullptr;
+        if (midi == nullptr) return;
+        uint8_t ch = (uint8_t)((status & 0x0F) + 1);
+        switch (status & 0xF0)
+        {
+            case 0x90: midi->sendNoteOn(d1, d2, ch); break; // velocity 0 = release, as Mackie Control does
+            case 0x80: midi->sendNoteOff(d1, d2, ch); break;
+            case 0xB0: midi->sendControlChange(d1, d2, ch); break;
+            case 0xE0: midi->sendPitchBend((int)((d2 << 7) | d1) - 8192, ch); break;
+            default: break;
+        }
+    }
+    virtual void midiSysex(const uint8_t* data, uint16_t length) override
+    {
+        UsbMidi* midi = platform ? platform->getUsbMidi() : nullptr;
+        if (midi != nullptr) midi->sendSysEx(data, length);
+    }
 
     virtual void radioPower(bool on) override
     {
@@ -295,6 +315,87 @@ TrackerServices s_services;
 TrackerIo s_io;
 i2deck::DeckApp s_app;
 
+//==============================================================================================================
+// USB MIDI in, while i2 DECK is open. The Tracker reads USB MIDI from its
+// audio update, so the handlers only queue; update() hands the messages to
+// the deck. Notes and CCs no longer reach the Tracker's instruments here
+// (a Mackie host sends its LEDs as notes); clock and song position still do.
+//==============================================================================================================
+constexpr uint8_t kRing = 64;
+constexpr uint16_t kSysexMax = 128;
+constexpr uint8_t kSysexSlots = 4;
+uint8_t s_ring[kRing][3];
+volatile uint8_t s_ringHead = 0, s_ringTail = 0;
+uint8_t s_sysex[kSysexSlots][kSysexMax];
+uint16_t s_sysexLen[kSysexSlots];
+volatile uint8_t s_sysexHead = 0, s_sysexTail = 0;
+
+void ringPush(uint8_t status, uint8_t d1, uint8_t d2)
+{
+    uint8_t next = (uint8_t)((s_ringHead + 1) % kRing);
+    if (next == s_ringTail) return; // full: drop
+    s_ring[s_ringHead][0] = status;
+    s_ring[s_ringHead][1] = d1;
+    s_ring[s_ringHead][2] = d2;
+    s_ringHead = next;
+}
+
+void inNoteOn(uint8_t ch, uint8_t note, uint8_t vel) { ringPush((uint8_t)(0x90 | ((ch - 1) & 0x0F)), note, vel); }
+void inNoteOff(uint8_t ch, uint8_t note, uint8_t vel) { ringPush((uint8_t)(0x80 | ((ch - 1) & 0x0F)), note, vel); }
+void inCc(uint8_t ch, uint8_t cc, uint8_t value) { ringPush((uint8_t)(0xB0 | ((ch - 1) & 0x0F)), cc, value); }
+void inPressure(uint8_t ch, uint8_t value) { ringPush((uint8_t)(0xD0 | ((ch - 1) & 0x0F)), value, 0); }
+void inPitch(uint8_t ch, int value)
+{
+    int v = value + 8192;
+    ringPush((uint8_t)(0xE0 | ((ch - 1) & 0x0F)), (uint8_t)(v & 0x7F), (uint8_t)((v >> 7) & 0x7F));
+}
+void inSysex(const uint8_t* data, uint16_t length, bool complete)
+{
+    if (!complete || length > kSysexMax) return; // Mackie messages are short
+    uint8_t next = (uint8_t)((s_sysexHead + 1) % kSysexSlots);
+    if (next == s_sysexTail) return;
+    memcpy(s_sysex[s_sysexHead], data, length);
+    s_sysexLen[s_sysexHead] = length;
+    s_sysexHead = next;
+}
+
+void takeUsbMidi(Platform* platform, bool take)
+{
+    UsbMidi* midi = platform ? platform->getUsbMidi() : nullptr;
+    if (midi == nullptr) return;
+    if (!take)
+    {
+        midiUsbDefaultActions();
+        return;
+    }
+    s_ringHead = s_ringTail = 0;
+    s_sysexHead = s_sysexTail = 0;
+    UsbMidi::MidiReceiveActions a;
+    a.realTime = receiveUsbRealtime;
+    a.noteOn = inNoteOn;
+    a.noteOff = inNoteOff;
+    a.songPosition = handleUsbSongPosition;
+    a.controlChange = inCc;
+    midi->setReceiveActions(&a);
+    static const UsbMidi::ExtraReceiveActions extra = { inPitch, inPressure, inSysex };
+    midi->setExtraReceiveActions(&extra);
+}
+
+void drainUsbMidi()
+{
+    while (s_ringTail != s_ringHead)
+    {
+        const uint8_t* m = s_ring[s_ringTail];
+        s_app.midiIn(m[0], m[1], m[2]);
+        s_ringTail = (uint8_t)((s_ringTail + 1) % kRing);
+    }
+    while (s_sysexTail != s_sysexHead)
+    {
+        s_app.sysexIn(s_sysex[s_sysexTail], s_sysexLen[s_sysexTail]);
+        s_sysexTail = (uint8_t)((s_sysexTail + 1) % kSysexSlots);
+    }
+}
+
 bool toButton(uint8_t b, Button& out)
 {
     switch (b)
@@ -313,6 +414,9 @@ bool toButton(uint8_t b, Button& out)
         case interfaceButtonInstr: out = Button::Deck1; return true; // GRADE
         case interfaceButtonFx1: out = Button::Deck2; return true;   // HUB
         case interfaceButtonFx2: out = Button::Deck3; return true;   // STATIC
+        case interfaceButtonMaster: out = Button::Deck4; return true; // MIXER
+        case interfaceButtonFile: out = Button::Deck5; return true;   // FILE
+        case interfaceButtonConfig: out = Button::Deck6; return true; // SETUP
         default: break;
     }
     if (b >= interfaceButton0 && b <= interfaceButton7)
@@ -328,16 +432,17 @@ const uint8_t kKeyButtons[] = {
     interfaceButtonShift, interfaceButtonDelete, interfaceButtonCopy,  interfaceButtonInsert, interfaceButtonRec,
 };
 
-// NOTE, INSTRUMENT, FX1 and FX2 are deck hotkeys in i2 DECK.
-const uint8_t kDeckButtons[] = { interfaceButtonNote, interfaceButtonInstr, interfaceButtonFx1, interfaceButtonFx2 };
+// NOTE, INSTRUMENT, FX1, FX2, MASTER, FILE and CONFIG are deck hotkeys in
+// i2 DECK (CUT, GRADE, HUB, STATIC, MIXER, FILE, SETUP), locked or not.
+const uint8_t kDeckButtons[] = { interfaceButtonNote, interfaceButtonInstr, interfaceButtonFx1,   interfaceButtonFx2,
+                                 interfaceButtonMaster, interfaceButtonFile, interfaceButtonConfig };
 
-// The Tracker's big module buttons (Params .. Pattern) do nothing in i2 DECK
-// while the Tracker is locked. Unlocked (Shift + Rec for 2 s), they open the
-// Tracker's own screens again. MUSIC (home screen button 5) is the way in.
+// The other big Tracker buttons do nothing in i2 DECK, locked or not, except
+// PATTERN, which opens the normal Tracker (as MUSIC does). Polyend's own File
+// and Config screens are reached from the Tracker: unlock, PATTERN, Config.
 const uint8_t kModuleButtons[] = {
-    interfaceButtonPerformance, interfaceButtonParams,     interfaceButtonFile,      interfaceButtonConfig,
-    interfaceButtonMaster,      interfaceButtonSamplePlay, interfaceButtonSampleEdit, interfaceButtonSampleRec,
-    interfaceButtonSampleLoad,  interfaceButtonSong,       interfaceButtonPattern,
+    interfaceButtonPerformance, interfaceButtonParams,   interfaceButtonSamplePlay, interfaceButtonSampleEdit,
+    interfaceButtonSampleRec,   interfaceButtonSampleLoad, interfaceButtonSong,     interfaceButtonPattern,
 };
 
 } // namespace
@@ -393,6 +498,7 @@ void cI2Deck::start(uint32_t options)
     ip->setPotObj(interfacePot0, functEncoder, false);
     ip->setPadsGlobal(functPads);
 
+    takeUsbMidi(platform, true);
     s_app.setIo(&s_io);
     s_app.begin(s_services);
     running = true;
@@ -418,6 +524,7 @@ void cI2Deck::stop()
         s_app.end();
     }
     running = false;
+    takeUsbMidi(platform, false);
     for (uint8_t l = 0; l < kLayerCount; l++)
     {
         layerData[l].game = nullptr;
@@ -443,6 +550,7 @@ void cI2Deck::update()
     }
 
     uint32_t now = platform && platform->getTimer() ? platform->getTimer()->millis() : 0;
+    drainUsbMidi();
     s_app.tick(now);
 
     // Redraw what changed, only when the display is idle so a new request
@@ -504,13 +612,10 @@ static void functButton(uint8_t button, uint8_t state)
 
 static void functSwitchModule(uint8_t button)
 {
-    // Locked: the big buttons are dead in i2 DECK, except PATTERN, which opens
-    // the normal Tracker (the same as MUSIC on the home screen).
-    if (cI2Deck::isLocked() && button != interfaceButtonPattern) return;
+    // The big buttons are dead in i2 DECK, except PATTERN, which opens the
+    // normal Tracker (the same as MUSIC on the home screen).
     if (button == interfaceButtonPattern)
     {
         DK->requestLeave(0); // as MUSIC does: switch on the next update
-        return;
     }
-    DK->eventFunct(eventSwitchModule, DK, &button, 0);
 }

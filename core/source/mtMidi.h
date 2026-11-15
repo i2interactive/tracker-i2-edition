@@ -58,6 +58,7 @@ class UartMidi;
 class UsbMidi;
 
 void midiInit(UartMidi* uartMidi, UsbMidi* usbMidi);
+void midiUsbDefaultActions(); // i2 edition: back to the Tracker's own USB MIDI handlers
 void midiUpdate();
 void handleJackNoteOn(byte channel, byte pitch, byte velocity);
 void handleJackNoteOff(byte channel, byte pitch, byte velocity);

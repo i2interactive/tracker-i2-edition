@@ -148,6 +148,18 @@ class UsbMidi : public Midi
     };
 
     virtual void setReceiveActions(MidiReceiveActions* receiveActions) = 0;
+
+    // i2 edition: what i2 DECK's MIXER (Mackie Control) also needs. Pitch
+    // bend (-8192..8191), channel pressure and system exclusive, in and out.
+    // Defaults do nothing (only the original Tracker runs i2 DECK).
+    struct ExtraReceiveActions
+    {
+        void (*pitchBend)(uint8_t channel, int value);
+        void (*channelPressure)(uint8_t channel, uint8_t value);
+        void (*sysEx)(const uint8_t* data, uint16_t length, bool complete);
+    };
+    virtual void setExtraReceiveActions(const ExtraReceiveActions* actions) { (void)actions; }
+    virtual void sendSysEx(const uint8_t* data, uint16_t length) { (void)data; (void)length; }
 };
 
 class UartMidi : public Midi
