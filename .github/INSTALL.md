@@ -124,7 +124,7 @@ This step confirms your Tracker takes Community Edition before any i2 code is in
 | Come back to i2 DECK | Config or File (while locked); Config > i2 > Deck (when unlocked) |
 | Switch GRADE between Resolve and Premiere | Screen button 6 in GRADE |
 | Turn the page (STATIC: TUNER / GLITCH) | Screen button 7 |
-| Unlock File and Config until restart | Hold Shift + Rec, press screen buttons 8, 1, 8 |
+| Unlock File and Config until restart | Hold Shift + Rec together for 2 seconds |
 
 **The four decks**
 
@@ -150,7 +150,7 @@ If you've changed shortcuts in Premiere or Resolve, edit the deck to match.
 
 The Tracker shows only i2 DECK, its decks and MUSIC. Polyend's **File** and **Config** screens are locked.
 
-- **Until the next restart:** in i2 DECK (the home screen is easiest), **hold Shift and Rec** (bottom row of the right-hand buttons, side by side) and, while holding them, press **screen buttons 8, 1, 8** within 3 seconds. The screen says **UNLOCKED UNTIL RESTART**, and an UNLOCKED chip stays in the top bar. Do the combo again to lock.
+- **Until the next restart:** in i2 DECK (the home screen is easiest), **hold Shift and Rec together for 2 seconds** (bottom row of the right-hand buttons, side by side). The screen says **UNLOCKED UNTIL RESTART**, and an UNLOCKED chip stays in the top bar. Hold them for 2 seconds again to lock.
 - **For good:** in `i2/Deck/settings.txt` on the card, change `lock=on` to `lock=off`.
 
 ---
@@ -177,7 +177,7 @@ Projects saved under Community Edition may use a newer format that 1.9.2 can't o
 - To skip i2 DECK at start-up, put a file `i2/Deck/settings.txt` on the card containing the two lines `lock=off` and `boot=music`.
 
 **I can't get into Config (locked)**
-- Do the unlock combo on the i2 DECK home screen: hold Shift + Rec, press screen buttons 8, 1, 8 within 3 seconds.
+- Do the unlock combo on the i2 DECK home screen: hold Shift + Rec together for 2 seconds.
 - Or put the card in a computer and change `lock=on` to `lock=off` in `i2/Deck/settings.txt` (create the file with just that line if it's missing).
 - Or use the pinhole recovery above. It doesn't need Config at all.
 
@@ -201,7 +201,7 @@ Projects saved under Community Edition may use a newer format that 1.9.2 can't o
 
 1. Download the newest build (Part 3b).
 2. Copy it to `Firmware`. You can delete the older `PolyendTracker_i2_` file.
-3. On the i2 DECK home screen, unlock: hold Shift + Rec, press screen buttons 8, 1, 8.
+3. On the i2 DECK home screen, unlock: hold Shift + Rec together for 2 seconds.
 4. Run **Config > Firmware > Firmware update** (Part 5).
 
 Your decks and settings stay on the SD card. When an update brings a newer version of a built-in deck, the Tracker keeps your old file as `<name>-old.txt` (for example `static-old.txt`) and writes the new one; copy any edits across. To get a built-in deck back at any time, delete its file in `i2/Deck/`.

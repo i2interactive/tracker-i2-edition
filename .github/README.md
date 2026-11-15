@@ -47,7 +47,7 @@ The Tracker shows only the i2 DECK home screen, its decks and MUSIC (the normal 
 - In the Tracker's own screens, File and Config take you to the i2 DECK home screen, which shows **LOCKED**. This is also the way back to the deck.
 - A locked Tracker always starts in i2 DECK (`boot=music` only applies when the lock is off).
 
-**To unlock until the next restart:** in i2 DECK (home screen or any deck), **hold Shift and Rec** (bottom row of the right-hand buttons, next to each other) and press **screen buttons 8, 1, 8** within 3 seconds. The home screen shows **UNLOCKED UNTIL RESTART**, and an UNLOCKED chip stays in the top bar. File, Config and **Config > Firmware > Firmware update** now work. Do the combo again to lock without restarting.
+**To unlock until the next restart:** in i2 DECK (home screen or any deck), **hold Shift and Rec together for 2 seconds** (bottom row of the right-hand buttons, next to each other). The home screen shows **UNLOCKED UNTIL RESTART**, and an UNLOCKED chip stays in the top bar. File, Config and **Config > Firmware > Firmware update** now work. Hold them for 2 seconds again to lock without restarting.
 
 **To turn the lock off for good:** change `lock=on` to `lock=off` in `i2/Deck/settings.txt` on the SD card.
 
@@ -169,7 +169,7 @@ v0.2 (passed on Ian's Tracker, Nov 14): boots to i2 DECK, USB keys reach Windows
 
 v0.3:
 1. **Update and lock.** After flashing, the Tracker boots to i2 DECK. Press Config and File: the screen flashes **LOCKED**, nothing opens. MUSIC (button 5) opens the Tracker; Pattern, Song and Sample screens work; File and Config there bring you back to the i2 DECK home screen, which says LOCKED.
-2. **Unlock combo.** On the home screen, hold Shift + Rec and press screen buttons 8, 1, 8. "UNLOCKED UNTIL RESTART" appears and an UNLOCKED chip shows in the top bar. Config opens, including Config > Firmware. Repeat the combo: LOCKED again. Restart: locked again.
+2. **Unlock combo.** On the home screen, hold Shift + Rec together for 2 seconds. "UNLOCKED UNTIL RESTART" appears and an UNLOCKED chip shows in the top bar. Config opens, including Config > Firmware. Hold them for 2 seconds again: LOCKED again. A short tap, or Shift or Rec alone, does nothing. Restart: locked again.
 3. **lock=off.** Put `lock=off` in `settings.txt`: File and Config open straight away. Put `lock=on` back.
 4. **GRADE switch.** In GRADE, button 6 switches RESOLVE / PREMIERE, the switch on screen follows, and the choice survives a restart. Resolve: LITE, then MASTER / RED on the wheel move the image (as in v0.2).
 5. **Premiere Color Mode.** In Premiere 27, open a sequence in Color: PREV / NEXT and the CLIPS dial step clips; CMPR toggles Comparison View; click a control to latch it, then NUDGE V / H move it and OK accepts; HUD hides the HUD while held. Check EDIT / COLR / EXPT against Window > Mode, then assign the LATCH keys (see `tools/i2deck/PREMIERE_COLOR.md`) and try a few.

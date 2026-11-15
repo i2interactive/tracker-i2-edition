@@ -100,10 +100,8 @@ const char* const kFxNames[kFxCount] = { "STUTTER", "CRUSH", "TAPE STOP", "SCAN"
 // stutter lengths as note values (1/4 = one beat at the project tempo)
 const char* const kDivNames[kDivisions] = { "1/2", "1/4", "1/8", "1/16", "1/32", "1/64" };
 
-// Hard-to-hit-by-accident unlock: hold Shift + Rec, press screen buttons
-// 8, 1, 8 within 3 seconds.
-constexpr uint8_t kCombo[3] = { 7, 0, 7 };
-constexpr uint32_t kComboMs = 3000;
+// Unlock: hold Shift + Rec together for 2 seconds (in i2 DECK).
+constexpr uint32_t kComboMs = 2000;
 
 bool parseAct(const char* s, const char* e, uint8_t& act, uint8_t& arg)
 {
@@ -411,7 +409,8 @@ void DeckApp::begin(Services& services)
     last[0] = 0;
     flashText[0] = 0;
     memset(passKey, 0, sizeof(passKey));
-    memset(comboSeq, 0, sizeof(comboSeq));
+    comboDown = false;
+    comboFired = false;
     loadSettings();
     if (io) io->lockChanged(locked());
     dirtyMask = 0x3F;
@@ -624,20 +623,27 @@ void DeckApp::tap(i2ctl::KeyCombo c)
 }
 
 //==============================================================================================================
-// Lock: Shift + Rec held, then screen buttons 8, 1, 8 within 3 seconds
+// Lock: hold Shift + Rec together for 2 seconds
 //==============================================================================================================
-void DeckApp::combo(int screen)
+void DeckApp::comboHeld(bool both)
 {
-    comboSeq[0] = comboSeq[1];
-    comboSeq[1] = comboSeq[2];
-    comboSeq[2] = (uint8_t)(screen + 1);
-    comboTime[0] = comboTime[1];
-    comboTime[1] = comboTime[2];
-    comboTime[2] = nowMs;
-    bool match = true;
-    for (int i = 0; i < 3; i++) match = match && comboSeq[i] == kCombo[i] + 1;
-    if (!match || comboTime[2] - comboTime[0] > kComboMs) return;
-    memset(comboSeq, 0, sizeof(comboSeq));
+    if (both && !comboDown)
+    {
+        comboDown = true;
+        comboFired = false;
+        comboStart = nowMs;
+    }
+    else if (!both)
+    {
+        comboDown = false;
+        comboFired = false;
+    }
+}
+
+void DeckApp::comboCheck()
+{
+    if (!comboDown || comboFired || nowMs - comboStart < kComboMs) return;
+    comboFired = true; // once per hold
     if (!lockSetting)
     {
         flash("LOCK IS OFF IN SETTINGS");
@@ -897,11 +903,13 @@ void DeckApp::button(Button b, bool down)
     if (b == Button::Shift)
     {
         shift = down;
+        comboHeld(shift && recHeld);
         return;
     }
     if (b == Button::Rec)
     {
         recHeld = down;
+        comboHeld(shift && recHeld);
         return;
     }
 
@@ -909,11 +917,7 @@ void DeckApp::button(Button b, bool down)
     if (screen >= 0 && screen <= 7)
     {
         if (!down) return;
-        if (shift && recHeld)
-        {
-            combo(screen); // the unlock combo; screen buttons do nothing else
-            return;
-        }
+        if (shift && recHeld) return; // holding the unlock combo: screen buttons do nothing
         if (home)
         {
             if (screen < kBuiltinDecks) openDeck((uint8_t)screen);
@@ -1053,6 +1057,7 @@ void DeckApp::jog(int16_t steps)
 void DeckApp::tick(uint32_t now)
 {
     nowMs = now;
+    comboCheck();
     if (flashText[0] && flashUntil == 0)
     {
         flashUntil = now + 2500;

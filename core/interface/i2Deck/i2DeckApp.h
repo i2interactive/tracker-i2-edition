@@ -197,7 +197,8 @@ class DeckApp final : public i2arc::Game
     const BuiltinDeck& source(uint8_t index) const;
     bool hasAlt() const { return !home && deckIndex >= 0 && kBuiltin[deckIndex].alt != nullptr; }
     void flash(const char* text);
-    void combo(int screen);
+    void comboHeld(bool both);
+    void comboCheck();
     // glitch
     void pushGlitch();
     void glitchAction(uint8_t act, uint8_t arg, bool down);
@@ -252,8 +253,9 @@ class DeckApp final : public i2arc::Game
     bool unlocked = false; // the secret combo, until restart
     uint8_t gradeSide = 0; // 0 = first app, 1 = alt
     bool recHeld = false;
-    uint8_t comboSeq[3] = {};
-    uint32_t comboTime[3] = {};
+    bool comboDown = false;  // Shift + Rec both held
+    bool comboFired = false; // already toggled during this hold
+    uint32_t comboStart = 0;
 
     // radio
     bool radioOn = false;

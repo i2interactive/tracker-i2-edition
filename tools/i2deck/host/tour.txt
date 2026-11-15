@@ -154,44 +154,41 @@ pad 9
 expectleft 1
 screen 8
 expectaudio 0
-# back home, then the lock: Shift + Rec held, screen buttons 8 1 8
+# back home, then the lock: hold Shift + Rec together for 2 s (a frame is 17 ms)
 shot 10_home_again
 expectlocked 1
 shift 1
 rec 1
-screen 8
-screen 1
-screen 8
+wait 130
+expectlocked 0
 rec 0
 shift 0
-wait 2
-expectlocked 0
 shot 15_home_unlocked
-# a wrong order does nothing; the right one locks again
+# a short hold (about 1 s) does nothing
 shift 1
 rec 1
-screen 1
-screen 8
-screen 1
+wait 60
 rec 0
 shift 0
 expectlocked 0
+# holding a long time toggles only once: locks again, stays locked
 shift 1
 rec 1
-screen 8
-screen 1
-screen 8
+wait 300
 rec 0
 shift 0
 expectlocked 1
-# too slow: more than 3 s between the first and the last press
+# Shift alone, or Rec alone, never unlocks; screen buttons do nothing while both are held
+shift 1
+wait 150
+shift 0
+rec 1
+wait 150
+rec 0
+expectlocked 1
 shift 1
 rec 1
-screen 8
-wait 100
-screen 1
-wait 100
-screen 8
+screen 5
 rec 0
 shift 0
 expectlocked 1
