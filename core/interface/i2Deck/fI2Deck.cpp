@@ -504,6 +504,13 @@ static void functButton(uint8_t button, uint8_t state)
 
 static void functSwitchModule(uint8_t button)
 {
-    if (cI2Deck::isLocked()) return; // locked: the big buttons are dead in i2 DECK
+    // Locked: the big buttons are dead in i2 DECK, except PATTERN, which opens
+    // the normal Tracker (the same as MUSIC on the home screen).
+    if (cI2Deck::isLocked() && button != interfaceButtonPattern) return;
+    if (button == interfaceButtonPattern)
+    {
+        DK->requestLeave(0); // as MUSIC does: switch on the next update
+        return;
+    }
     DK->eventFunct(eventSwitchModule, DK, &button, 0);
 }

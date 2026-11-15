@@ -121,7 +121,7 @@ This step confirms your Tracker takes Community Edition before any i2 code is in
 | Jump to CUT, GRADE, HUB or STATIC | NOTE, INSTRUMENT, FX1 or FX2 (from anywhere in i2 DECK) |
 | Turn the page (CUT) | Screen button 7 |
 | Add Shift to a key or wheel step | Hold Shift |
-| Open the normal Tracker | MUSIC on the home screen (button 5). While locked, the big Tracker buttons (Params through Pattern) do nothing in i2 DECK |
+| Open the normal Tracker | PATTERN, or MUSIC on the home screen (button 5). While locked, the other big Tracker buttons (Params through Song) do nothing in i2 DECK |
 | Come back to i2 DECK | Config or File (while locked); Config > i2 > Deck (when unlocked) |
 | Switch GRADE between Resolve and Premiere | Screen button 6 in GRADE |
 | Turn the page (STATIC: TUNER / GLITCH) | Screen button 7 |
