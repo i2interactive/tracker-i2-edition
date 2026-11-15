@@ -96,6 +96,10 @@ enum class Button : uint8_t
     Copy,
     Insert,
     Rec,
+    Deck0, // NOTE, INSTRUMENT, FX1, FX2: jump straight to a deck
+    Deck1,
+    Deck2,
+    Deck3,
 };
 
 enum class Sfx : uint8_t

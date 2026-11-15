@@ -179,6 +179,7 @@ class DeckApp final : public i2arc::Game
     static void readBoot(Services& sv, bool& music, bool& lock);
 
     bool locked() const { return lockSetting && !unlocked; }
+    int8_t openDeckIndex() const { return home ? -1 : deckIndex; }
     // A locked Tracker screen was asked for: say so.
     void flashLocked();
 

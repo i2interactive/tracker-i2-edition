@@ -305,7 +305,9 @@ static bool nameToButton(const char* n, Button& b)
         Button b;
     } k[] = { { "play", Button::Play },     { "left", Button::Left },   { "right", Button::Right },
               { "up", Button::Up },         { "down", Button::Down },   { "delete", Button::Delete },
-              { "copy", Button::Copy },     { "insert", Button::Insert }, { "rec", Button::Rec } };
+              { "copy", Button::Copy },     { "insert", Button::Insert }, { "rec", Button::Rec },
+              { "note", Button::Deck0 },    { "instr", Button::Deck1 },  { "fx1", Button::Deck2 },
+              { "fx2", Button::Deck3 } };
     for (auto& e : k)
     {
         if (!strcmp(n, e.name))
@@ -560,6 +562,14 @@ int main(int argc, char** argv)
         }
         else if (!strcmp(cmd, "shift") && sscanf(line, "%*s %d", &a) == 1) app.button(Button::Shift, a != 0);
         else if (!strcmp(cmd, "rec") && sscanf(line, "%*s %d", &a) == 1) app.button(Button::Rec, a != 0);
+        else if (!strcmp(cmd, "expectdeck") && sscanf(line, "%*s %d", &a) == 1)
+        {
+            if (app.openDeckIndex() != a)
+            {
+                printf("!! expected deck %d, have %d\n", a, app.openDeckIndex());
+                bad = 1;
+            }
+        }
         else if (!strcmp(cmd, "expectlocked") && sscanf(line, "%*s %d", &a) == 1)
         {
             if (io.lockedNow != a || (int)app.locked() != a)

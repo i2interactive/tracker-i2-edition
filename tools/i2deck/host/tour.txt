@@ -193,6 +193,26 @@ rec 0
 shift 0
 expectlocked 1
 wait 200
+# NOTE / INSTRUMENT / FX1 / FX2 jump straight to CUT / GRADE / HUB / STATIC, even while locked
+expectdeck -1
+btn note
+wait 3
+expectdeck 0
+btn fx2
+wait 3
+expectdeck 3
+btn fx2
+wait 3
+expectdeck 3
+btn fx1
+wait 3
+expectdeck 2
+btn instr
+wait 3
+expectdeck 1
+screen 8
+wait 3
+expectdeck -1
 # lock=off on the card
 settings os=mac boot=deck lock=off
 restart

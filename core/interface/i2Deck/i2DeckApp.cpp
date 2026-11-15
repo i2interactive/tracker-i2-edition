@@ -913,6 +913,17 @@ void DeckApp::button(Button b, bool down)
         return;
     }
 
+    int hotkey = (int)b - (int)Button::Deck0;
+    if (hotkey >= 0 && hotkey < kBuiltinDecks)
+    {
+        // NOTE / INSTRUMENT / FX1 / FX2: straight to CUT / GRADE / HUB / STATIC
+        if (!down || (shift && recHeld)) return;
+        if (!home && deckIndex == hotkey) return; // already there
+        if (!home) goHome();
+        openDeck((uint8_t)hotkey);
+        return;
+    }
+
     int screen = (int)b - (int)Button::Screen0;
     if (screen >= 0 && screen <= 7)
     {

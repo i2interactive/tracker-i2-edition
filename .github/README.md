@@ -36,14 +36,15 @@ Every deck uses the same layout:
 
 - **Shift** adds Shift to any pad or wheel step.
 - **Play, the arrows, Delete, Copy and Insert** send Space, the arrow keys, Backspace, Copy and Paste in the keyboard decks.
-- **Any Tracker button** (Pattern, Song, Sample...) opens that Tracker screen straight away. **File and Config are locked** (see [The lock](#the-lock)). In the Tracker's screens, **Config (or File) brings you back to i2 DECK** while locked.
+- **NOTE, INSTRUMENT, FX1 and FX2 jump straight to CUT, GRADE, HUB and STATIC** from the home screen or any deck.
+- **The big Tracker buttons** (Params, Performance, File, Config, Master, Sample Load / Play / Edit / Rec, Song, Pattern) **do nothing in i2 DECK while locked**. MUSIC on the home screen (button 5) opens the normal Tracker, where they all work as usual (except File and Config, see [The lock](#the-lock)); in the Tracker's screens, **Config (or File) brings you back to i2 DECK** while locked. Unlocked, the big buttons open their Tracker screens from i2 DECK too.
 - **Mac or Windows:** button 7 on the home screen. It swaps Cmd for Ctrl and Option for Alt, and is remembered.
 
 ### The lock
 
 The Tracker shows only the i2 DECK home screen, its decks and MUSIC (the normal pattern, instrument, sample and song screens). Polyend's **File** (project browser) and **Config** screens are locked:
 
-- In i2 DECK, File and Config do nothing except flash **LOCKED**.
+- In i2 DECK, all the big Tracker buttons, File and Config included, do nothing.
 - In the Tracker's own screens, File and Config take you to the i2 DECK home screen, which shows **LOCKED**. This is also the way back to the deck.
 - A locked Tracker always starts in i2 DECK (`boot=music` only applies when the lock is off).
 
@@ -168,7 +169,7 @@ p1=885 ... p8=1079   station presets
 v0.2 (passed on Ian's Tracker, Nov 14): boots to i2 DECK, USB keys reach Windows over a data-rated cable.
 
 v0.3:
-1. **Update and lock.** After flashing, the Tracker boots to i2 DECK. Press Config and File: the screen flashes **LOCKED**, nothing opens. MUSIC (button 5) opens the Tracker; Pattern, Song and Sample screens work; File and Config there bring you back to the i2 DECK home screen, which says LOCKED.
+1. **Update and lock.** After flashing, the Tracker boots to i2 DECK. Press each big Tracker button (Params through Pattern, Config and File included): nothing happens. NOTE, INSTRUMENT, FX1 and FX2 open CUT, GRADE, HUB and STATIC, from the home screen and from inside another deck. MUSIC (button 5) opens the Tracker; Pattern, Song and Sample screens work; File and Config there bring you back to the i2 DECK home screen, which says LOCKED.
 2. **Unlock combo.** On the home screen, hold Shift + Rec together for 2 seconds. "UNLOCKED UNTIL RESTART" appears and an UNLOCKED chip shows in the top bar. Config opens, including Config > Firmware. Hold them for 2 seconds again: LOCKED again. A short tap, or Shift or Rec alone, does nothing. Restart: locked again.
 3. **lock=off.** Put `lock=off` in `settings.txt`: File and Config open straight away. Put `lock=on` back.
 4. **GRADE switch.** In GRADE, button 6 switches RESOLVE / PREMIERE, the switch on screen follows, and the choice survives a restart. Resolve: LITE, then MASTER / RED on the wheel move the image (as in v0.2).

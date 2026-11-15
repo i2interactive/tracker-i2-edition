@@ -309,6 +309,10 @@ bool toButton(uint8_t b, Button& out)
         case interfaceButtonCopy: out = Button::Copy; return true;
         case interfaceButtonInsert: out = Button::Insert; return true;
         case interfaceButtonRec: out = Button::Rec; return true;
+        case interfaceButtonNote: out = Button::Deck0; return true;  // CUT
+        case interfaceButtonInstr: out = Button::Deck1; return true; // GRADE
+        case interfaceButtonFx1: out = Button::Deck2; return true;   // HUB
+        case interfaceButtonFx2: out = Button::Deck3; return true;   // STATIC
         default: break;
     }
     if (b >= interfaceButton0 && b <= interfaceButton7)
@@ -324,8 +328,12 @@ const uint8_t kKeyButtons[] = {
     interfaceButtonShift, interfaceButtonDelete, interfaceButtonCopy,  interfaceButtonInsert, interfaceButtonRec,
 };
 
-// The Tracker's own screens stay one press away (File and Config only when
-// unlocked: see Interface::switchModuleByButton).
+// NOTE, INSTRUMENT, FX1 and FX2 are deck hotkeys in i2 DECK.
+const uint8_t kDeckButtons[] = { interfaceButtonNote, interfaceButtonInstr, interfaceButtonFx1, interfaceButtonFx2 };
+
+// The Tracker's big module buttons (Params .. Pattern) do nothing in i2 DECK
+// while the Tracker is locked. Unlocked (Shift + Rec for 2 s), they open the
+// Tracker's own screens again. MUSIC (home screen button 5) is the way in.
 const uint8_t kModuleButtons[] = {
     interfaceButtonPerformance, interfaceButtonParams,     interfaceButtonFile,      interfaceButtonConfig,
     interfaceButtonMaster,      interfaceButtonSamplePlay, interfaceButtonSampleEdit, interfaceButtonSampleRec,
@@ -375,6 +383,10 @@ void cI2Deck::start(uint32_t options)
         ip->setButtonObj(b, functButton);
     }
     for (uint8_t b : kKeyButtons)
+    {
+        ip->setButtonObj(b, functButton);
+    }
+    for (uint8_t b : kDeckButtons)
     {
         ip->setButtonObj(b, functButton);
     }
@@ -492,5 +504,6 @@ static void functButton(uint8_t button, uint8_t state)
 
 static void functSwitchModule(uint8_t button)
 {
+    if (cI2Deck::isLocked()) return; // locked: the big buttons are dead in i2 DECK
     DK->eventFunct(eventSwitchModule, DK, &button, 0);
 }
