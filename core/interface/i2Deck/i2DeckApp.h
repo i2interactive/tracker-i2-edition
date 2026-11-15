@@ -197,6 +197,9 @@ class DeckApp final : public i2arc::Game
     // Start-up settings: boot=music asks to start in the Tracker; lock=off
     // turns the lock off. Defaults: start in i2 DECK, locked.
     static void readBoot(Services& sv, bool& music, bool& lock);
+    // The boot splash setting: splash=full (default), short or off, as an
+    // i2splash::Style (off = kStill: the finished splash, no motion).
+    static uint8_t readSplash(Services& sv);
 
     bool locked() const { return lockSetting && !unlocked; }
     int8_t openDeckIndex() const { return home ? -1 : deckIndex; }
@@ -283,6 +286,7 @@ class DeckApp final : public i2arc::Game
     // settings
     bool bootMusic = false;
     bool lockSetting = true;
+    uint8_t splashSetting = 0; // i2splash::Style, kept in settings.txt
     bool unlocked = false; // the secret combo, until restart
     uint8_t gradeSide = 0; // 0 = first app, 1 = alt
     uint8_t appSide = 1;   // MIXER / FILE / SETUP: 0 = Resolve, 1 = Premiere

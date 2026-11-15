@@ -1,4 +1,19 @@
 # A walk through every screen. Screen buttons are 1-8, pads 0-47.
+# The boot splash (original Tracker): frames across the animation, the
+# short and still versions, and a sweep of every tick against the chip's
+# limits. Args: style ms progress status-bits (1 SD, 2 USB, 4 RADIO).
+splashcheck
+splash full 0 0 7 00a_boot_grid
+splash full 280 4 7 00b_boot_dots
+splash full 560 10 7 00c_boot_mark
+splash full 840 20 7 00d_boot_band
+splash full 1120 28 7 00e_boot_type
+splash full 1320 34 7 00f_boot_ui
+splash full 1760 62 5 00g_boot_loading
+splash full 2000 100 7 00h_boot_final
+splash short 200 10 7 00i_boot_short
+splash short 440 22 7 00j_boot_short_done
+splash still 0 40 7 00k_boot_still
 wait 5
 shot 01_home
 screen 7
@@ -395,3 +410,12 @@ screen 8
 wait 2
 expecthome 0
 expectheld 0
+# splash=short / off survives the deck rewriting settings.txt
+settings splash=short lock=on
+restart
+screen 7
+wait 2
+expectcard settings.txt splash=short
+screen 7
+wait 2
+expectcard settings.txt splash=short

@@ -12,6 +12,7 @@
 #include "mtMidi.h"
 
 #include "i2DeckApp.h"
+#include "i2Splash.h"
 
 extern uint8_t externalRamScratchBuff[];
 
@@ -462,6 +463,16 @@ bool cI2Deck::startsFirst(Platform* platform)
     i2deck::DeckApp::readBoot(s_services, music, lock);
     locked = lock;
     return !music || lock;
+}
+
+uint8_t cI2Deck::bootSplash(Platform* platform)
+{
+    s_services.platform = platform;
+    bool music = false, lock = true;
+    i2deck::DeckApp::readBoot(s_services, music, lock);
+    uint8_t style = i2deck::DeckApp::readSplash(s_services);
+    if (style == i2splash::kFull && music && !lock) style = i2splash::kShort;
+    return style;
 }
 
 void cI2Deck::flashLocked()

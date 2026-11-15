@@ -39,6 +39,11 @@ class cI2Deck : public ModuleBase
     // Tracker instead). A locked Tracker always starts in i2 DECK.
     static bool startsFirst(Platform* platform);
 
+    // The boot splash for this start (an i2splash::Style): splash=full, short
+    // or off in settings.txt; a Tracker that boots to MUSIC (boot=music with
+    // lock=off) gets the short version.
+    static uint8_t bootSplash(Platform* platform);
+
     // Lock: while locked, the Tracker's File and Config screens stay shut
     // (Interface::switchModuleByButton sends those buttons to i2 DECK).
     // "lock=off" in settings.txt turns it off; Shift + Rec held together for

@@ -171,6 +171,11 @@ class cDisplay
 
     Theme& getTheme() { return *((Theme*)theme); }
 
+    // i2 edition (original Tracker): true until the start screen is gone.
+    // Meanwhile every full-screen frame the display code swaps in by itself
+    // (power-on, font load) is the boot splash's first frame, not black.
+    bool bootSplash = true;
+
   private:
     void step1();
     void step2();

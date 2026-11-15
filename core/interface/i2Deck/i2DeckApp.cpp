@@ -1,4 +1,5 @@
 #include "i2DeckApp.h"
+#include "i2Splash.h"
 
 #include <math.h>
 #include <stdio.h>
@@ -398,9 +399,21 @@ void DeckApp::readBoot(Services& services, bool& music, bool& lock)
     lock = !settingIs(buf, "lock", "off");
 }
 
+uint8_t DeckApp::readSplash(Services& services)
+{
+    char buf[kSettingsCap];
+    int32_t n = services.loadText(kSettingsPath, buf, sizeof(buf) - 1);
+    if (n <= 0) return i2splash::kFull;
+    buf[n] = 0;
+    if (settingIs(buf, "splash", "off")) return i2splash::kStill;
+    if (settingIs(buf, "splash", "short")) return i2splash::kShort;
+    return i2splash::kFull;
+}
+
 void DeckApp::loadSettings()
 {
     readBoot(*sv, bootMusic, lockSetting);
+    splashSetting = readSplash(*sv);
     char buf[kSettingsCap];
     int32_t n = sv->loadText(kSettingsPath, buf, sizeof(buf) - 1);
     if (n <= 0) return;
@@ -434,9 +447,10 @@ void DeckApp::loadSettings()
 void DeckApp::saveSettings()
 {
     char buf[kSettingsCap];
-    int n = snprintf(buf, sizeof(buf), "os=%s\nboot=%s\nlock=%s\ngrade=%s\napp=%s\nfreq=%d\nvol=%d\n", mac ? "mac" : "win",
-                     bootMusic ? "music" : "deck", lockSetting ? "on" : "off", gradeSide ? "premiere" : "resolve",
-                     appSide ? "premiere" : "resolve", (int)(freq * 10 + 0.5f), volume);
+    int n = snprintf(buf, sizeof(buf), "os=%s\nboot=%s\nlock=%s\nsplash=%s\ngrade=%s\napp=%s\nfreq=%d\nvol=%d\n", mac ? "mac" : "win",
+                     bootMusic ? "music" : "deck", lockSetting ? "on" : "off",
+                     splashSetting == i2splash::kStill ? "off" : splashSetting == i2splash::kShort ? "short" : "full",
+                     gradeSide ? "premiere" : "resolve", appSide ? "premiere" : "resolve", (int)(freq * 10 + 0.5f), volume);
     for (int i = 0; i < 8 && n > 0 && n < (int)sizeof(buf) - 12; i++)
     {
         n += snprintf(buf + n, sizeof(buf) - (size_t)n, "p%d=%d\n", i + 1, (int)(presets[i] * 10 + 0.5f));

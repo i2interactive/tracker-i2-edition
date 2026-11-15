@@ -8,6 +8,10 @@
 #include "TrackerImpl.h"
 #include "display.h"
 #include "i2Deck/i2DotFont.h"
+#if !defined(PLATFORM_IMX)
+#include "i2Deck/i2Canvas.h"
+#include "i2Deck/i2Splash.h"
+#endif
 #include "elapsedMillis.h"
 
 #include "polyassert.h"
@@ -26,11 +30,13 @@
 #include "LiberationSans-Regular_17_L4.h"
 
 // BITMAPS
-#ifndef TRACKER_MINI
-#include "images/poly_logo_160x172_L8.h"
-#else
+#if defined(TRACKER_MINI)
 #include "images/poly_logo_172x172_L8.h"
+#elif defined(PLATFORM_IMX)
+#include "images/poly_logo_160x172_L8.h"
 #endif
+// i2 edition: the original Tracker has no Polyend logo; it boots to the
+// i2 DECK splash, drawn from dots (i2Deck/i2Splash.*).
 #include "CompressionRLE.h"
 #include "images/arrowIcons.h"
 #include "images/battery_28x13_L4.h"
@@ -80,7 +86,9 @@
 #endif
 
 static constexpr int kMaxFontBufferSize = 22396;
+#if defined(PLATFORM_IMX)
 __NOINIT(EXTERNAL_RAM) uint8_t poly_logo_160x172_l8[27520];
+#endif
 __NOINIT(EXTERNAL_RAM) uint8_t decompressedFontsCommonBuffer[kMaxFontBufferSize];
 
 // i2 edition: the 5x7 dot-matrix face used by i2 DECK, in three sizes. The
@@ -95,6 +103,27 @@ static void i2LoadDotFonts(DisplayDriver* driver)
         uint32_t length = i2dot::buildFont(size, decompressedFontsCommonBuffer);
         driver->writeFontRAMG(decompressedFontsCommonBuffer, length, i2dot::kAddress[size]);
     }
+}
+
+// The boot splash's first frame (black, the i2 mark's unlit grid), for the
+// frames the display code swaps in by itself before the start screen runs.
+// Call inside a coprocessor list, before API_DISPLAY.
+#if !defined(PLATFORM_IMX)
+static i2arc::Ft812Gfx i2BootGfx;
+#endif
+
+static void i2BootFrame()
+{
+#if !defined(PLATFORM_IMX)
+    if (!display.bootSplash)
+    {
+        return;
+    }
+    API_VERTEX_FORMAT(0);
+    i2BootGfx.beginLayer();
+    i2splash::drawGrid(i2BootGfx);
+    i2BootGfx.endLayer();
+#endif
 }
 
 // Call inside a coprocessor list, after the Tracker's fonts are registered.
@@ -167,7 +196,10 @@ __NOINIT(EXTERNAL_RAM)
 strFont fonts[displayFontCount];
 
 const strBitmap bitmaps[displayBitmapsCount] = {
-#ifndef TRACKER_MINI
+#if !defined(PLATFORM_IMX)
+    // i2 edition: no logo bitmap on the original Tracker (not loaded)
+    { nullptr, 80000, 0, 160, 172, L8, 160 },
+#elif !defined(TRACKER_MINI)
     {
       poly_logo_160x172_l8,
       80000,
@@ -315,6 +347,7 @@ void cDisplay::loadFont(const CompressedFontData* fontsData, uint8_t fontCount)
         API_CMD_SETFONT2(fonts[i].handle, fonts[i].address, first_char);
     }
     i2RegisterDotFonts();
+    i2BootFrame();
 
     API_DISPLAY();
     API_CMD_SWAP();
@@ -328,7 +361,7 @@ void cDisplay::begin(DisplayDriver* displayDriver, Timer* timer)
 
     this->timer = timer;
     // ####################################
-#ifndef TRACKER_MINI
+#if defined(PLATFORM_IMX) && !defined(TRACKER_MINI)
     decompress(poly_logo_160x172_l8_compressed,
                sizeof(poly_logo_160x172_l8_compressed) / sizeof(poly_logo_160x172_l8_compressed[0]),
                poly_logo_160x172_l8);
@@ -336,6 +369,10 @@ void cDisplay::begin(DisplayDriver* displayDriver, Timer* timer)
 
     for (uint8_t i = 0; i < displayBitmapsCount; i++)
     {
+        if (bitmaps[i].data == nullptr)
+        {
+            continue; // i2 edition: the original Tracker's missing logo
+        }
         displayDriver->writeDataRAMG(bitmaps[i].data, bitmaps[i].source, bitmaps[i].address);
     }
 
@@ -353,6 +390,10 @@ void cDisplay::begin(DisplayDriver* displayDriver, Timer* timer)
 
     API_VERTEX_FORMAT(0);
 
+#if !defined(PLATFORM_IMX)
+    // i2 edition: the first frame at power-on is the boot splash's
+    i2BootFrame();
+#else
     constexpr int bitmap_index = displayPolyLogoBitmap;
 
     API_SAVE_CONTEXT();
@@ -369,6 +410,7 @@ void cDisplay::begin(DisplayDriver* displayDriver, Timer* timer)
     API_END();
 
     API_RESTORE_CONTEXT();
+#endif
 
     API_DISPLAY();
     API_CMD_SWAP();
@@ -1400,6 +1442,7 @@ bool cDisplay::loadCustomFontFromSD(FileSystem* fs, const char* fontFilePath)
         API_CMD_SETFONT2(fonts[i].handle, fonts[i].address, first_char);
     }
     i2RegisterDotFonts();
+    i2BootFrame();
 
     API_DISPLAY();
     API_CMD_SWAP();

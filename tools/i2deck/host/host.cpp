@@ -18,6 +18,7 @@
 
 #include "../../../core/interface/i2Deck/i2DeckApp.h"
 #include "../../../core/interface/i2Deck/i2DotFont.h"
+#include "../../../core/interface/i2Deck/i2Splash.h"
 #include "font_metrics.h"
 
 using namespace i2arc;
@@ -308,6 +309,24 @@ class HostIo : public DeckIo
 };
 
 static DeckApp app;
+
+static uint8_t f_style(const char* s)
+{
+    return !strcmp(s, "short") ? i2splash::kShort : !strcmp(s, "still") ? i2splash::kStill : i2splash::kFull;
+}
+
+static i2splash::Frame splashFrame(const char* style, uint32_t ms, uint8_t progress, uint8_t status)
+{
+    i2splash::Frame f;
+    f.ms = ms;
+    f.style = f_style(style);
+    f.progress = progress;
+    f.status = status;
+    f.version = "1.0.0 CE";
+    f.build = "ffe6a96";
+    f.line = "Opening last project...";
+    return f;
+}
 
 static bool nameToButton(const char* n, Button& b)
 {
@@ -828,6 +847,75 @@ int main(int argc, char** argv)
             }
         }
         else if (!strcmp(cmd, "shot") && sscanf(line, "%*s %63s", name) == 1) shot(name);
+        else if (!strcmp(cmd, "splash"))
+        {
+            // splash <full|short|still> <ms> <progress> <status bits> <name>: one
+            // frame of the boot splash (cStartScreen on the original Tracker)
+            char style[16] = "";
+            int ms = 0, prog = 0, st = 0;
+            if (sscanf(line, "%*s %15s %d %d %d %63s", style, &ms, &prog, &st, name) == 5)
+            {
+                i2splash::Frame f = splashFrame(style, (uint32_t)ms, (uint8_t)prog, (uint8_t)st);
+                g.reset();
+                i2splash::draw(g, f);
+                std::string path = outDir + "/" + name + ".txt";
+                FILE* out = fopen(path.c_str(), "w");
+                fprintf(out, "# layer 0 dl=%zu cmd=%zu\n", g.dl, g.cmd);
+                fputs(g.out.c_str(), out);
+                fprintf(out, "P ");
+                for (int p = 0; p < 48; p++)
+                {
+                    uint8_t lv = i2splash::padLevel(f, (uint8_t)p);
+                    fprintf(out, "%d", lv > 160 ? 2 : lv > 24 ? 1 : 0);
+                }
+                fprintf(out, "\n");
+                fclose(out);
+                printf("shot %-18s frame %zu B (splash, %u ms)\n", name, g.dl, (unsigned)ms);
+                bad |= g.dl > 6000 || g.cmd > 3700;
+            }
+            else
+            {
+                fprintf(stderr, "bad splash line: %s", line);
+                bad = 1;
+            }
+        }
+        else if (!strcmp(cmd, "splashcheck"))
+        {
+            // Every 40 ms tick of every style, as the start screen draws it:
+            // inside the chip's limits, settled before the Tracker's 2 s
+            // minimum, pads dark at the end, and the first frame identical
+            // to the power-on frame (drawGrid).
+            const char* styles[3] = { "full", "short", "still" };
+            RecGfx grid;
+            grid.reset();
+            i2splash::drawGrid(grid);
+            for (const char* sname : styles)
+            {
+                size_t wDl = 0, wCmd = 0;
+                uint32_t settled = 0;
+                for (uint32_t tick = 0; tick <= 75; tick++)
+                {
+                    uint32_t ms = tick * 40;
+                    i2splash::Frame f = splashFrame(sname, ms, (uint8_t)(tick * 2 > 100 ? 100 : tick * 2), 7);
+                    g.reset();
+                    i2splash::draw(g, f);
+                    if (g.dl > wDl) wDl = g.dl;
+                    if (g.cmd > wCmd) wCmd = g.cmd;
+                    if (i2splash::animating(f)) settled = ms + 40;
+                    if (tick == 0 && strcmp(sname, "still") && g.out != grid.out)
+                    {
+                        printf("  !! splash %s: first frame differs from the power-on frame\n", sname);
+                        bad = 1;
+                    }
+                }
+                i2splash::Frame last = splashFrame(sname, i2splash::padsDoneAt(f_style(sname)), 100, 7);
+                int lit = 0;
+                for (int p = 0; p < 48; p++) lit += i2splash::padLevel(last, (uint8_t)p) > 0;
+                printf("splash %-5s worst: display list %zu B, commands %zu B, settled at %u ms, pads lit at end %d\n", sname, wDl, wCmd,
+                       (unsigned)settled, lit);
+                bad |= wDl > 6000 || wCmd > 3700 || settled > 2000 || lit > 0;
+            }
+        }
         else
         {
             fprintf(stderr, "unknown command: %s", line);

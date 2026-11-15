@@ -12,6 +12,78 @@
 
 elapsedMillis screenRefreshTimer;
 
+#if !defined(PLATFORM_IMX)
+// i2 edition: on the original Tracker the start screen is the i2 DECK boot
+// splash (i2Deck/i2Splash.*). It runs on the start screen's own 40 ms ticks,
+// inside the time the Tracker already spends there, and sweeps the pads once.
+#include "i2Deck/i2Deck.h"
+#include "i2Deck/i2Splash.h"
+#include "mtPadsBacklight.h"
+#include "mtStructs.h"
+#include <string.h>
+
+namespace
+{
+i2splash::Frame s_splash;
+uint16_t s_splashTicks = 0;
+uint8_t s_splashPad[48];
+
+uint8_t splashStatus(Platform* platform)
+{
+    uint8_t s = 0;
+    FileSystem* fs = platform->getFileSystem();
+    UsbKeyboard* kb = platform->getUsbKeyboard();
+    Radio* radio = platform->getRadio();
+    if (fs != nullptr && fs->isSdCardInserted()) s |= i2splash::kStatusSd;
+    if (kb != nullptr && kb->isConnected()) s |= i2splash::kStatusUsb;
+    if (radio != nullptr && radio->isinitialized()) s |= i2splash::kStatusRadio;
+    return s;
+}
+
+void splashPads()
+{
+    for (uint8_t pad = 0; pad < 48; pad++)
+    {
+        uint8_t level = i2splash::padLevel(s_splash, pad);
+        uint8_t gamma = (uint8_t)((uint16_t)level * mtConfig.values.padsLightFront / 255);
+        if (gamma == s_splashPad[pad]) continue;
+        s_splashPad[pad] = gamma;
+        if (gamma == 0) padsBacklight.setBackLayer(0, 0, pad);
+        else padsBacklight.setBackLayer(1, gamma, pad);
+    }
+}
+
+void splashPadsOff()
+{
+    for (uint8_t pad = 0; pad < 48; pad++)
+    {
+        if (s_splashPad[pad] == 0) continue;
+        s_splashPad[pad] = 0;
+        padsBacklight.setBackLayer(0, 0, pad);
+    }
+}
+
+// Moves the splash on one tick. True when the screen needs redrawing.
+bool splashTick(Platform* platform, uint8_t progress)
+{
+    if (s_splashTicks < 1000) s_splashTicks++;
+    bool redraw = i2splash::animating(s_splash);
+    s_splash.ms = (uint32_t)s_splashTicks * 40;
+    redraw |= i2splash::animating(s_splash);
+    uint8_t status = splashStatus(platform);
+    redraw |= status != s_splash.status;
+    s_splash.status = status;
+    if (progress > s_splash.progress)
+    {
+        s_splash.progress = progress > 100 ? 100 : progress;
+        redraw = true;
+    }
+    if (s_splash.ms <= i2splash::padsDoneAt(s_splash.style) + 80) splashPads();
+    return redraw;
+}
+} // namespace
+#endif
+
 // extern cProjectEditor* PE;
 static void functEndFileTransferMode();
 extern void changeVolume(int16_t value);
@@ -79,7 +151,20 @@ void Interface::initStartScreen()
     prop.h = 100;
     prop.w = 420;
 
+#if !defined(PLATFORM_IMX)
+    // the i2 DECK boot splash: cStartScreen draws this frame
+    s_splash = i2splash::Frame();
+    s_splash.style = fileSystem->isSdCardInserted() ? cI2Deck::bootSplash(platform) : (uint8_t)i2splash::kFull;
+    s_splash.version = interfaceGlobals.currentFirmwareVersion;
+    s_splash.build = interfaceGlobals.currentFirmwareBuild;
+    s_splash.line = projectLoadText;
+    s_splash.status = splashStatus(platform);
+    s_splashTicks = 0;
+    memset(s_splashPad, 0, sizeof(s_splashPad));
+    prop.data = &s_splash;
+#else
     prop.data = interfaceGlobals.currentFirmwareVersion;
+#endif
     startScreenControl = display.createControl<cStartScreen>(&prop);
 
     minStartTimeCounter = 0;
@@ -124,18 +209,35 @@ void Interface::refreshStartScreen()
         display.setControlShow(startScreenControl);
         display.setControlValue(startScreenControl, startProjectLoadingProgress);
         display.setControlText(startScreenControl, projectLoadText);
+#if !defined(PLATFORM_IMX)
+        splashTick(platform, (uint8_t)startProjectLoadingProgress);
+#endif
         display.refreshControl(startScreenControl);
     }
+#if !defined(PLATFORM_IMX)
+    else if (splashTick(platform, 0)) // time moves on, the progress didn't
+    {
+        display.setControlShow(startScreenControl);
+        display.refreshControl(startScreenControl);
+    }
+#endif
 }
 
 void Interface::hideStartScreen()
 {
+#if !defined(PLATFORM_IMX)
+    splashPadsOff();
+#endif
     display.setControlHide(startScreenControl);
     display.refreshControl(startScreenControl);
 }
 
 void Interface::destroyStartScreen()
 {
+#if !defined(PLATFORM_IMX)
+    splashPadsOff();
+    display.bootSplash = false; // font reloads draw plain black again
+#endif
     display.destroyControl(startScreenControl);
     startScreenControl = -1;
 }

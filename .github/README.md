@@ -22,6 +22,19 @@ The short version:
 5. On the Tracker, run **Config > Firmware > Firmware update**. From v0.3 on, Config is locked, and from v0.4 the Config button in i2 DECK opens the SETUP deck. So: on the i2 DECK home screen, **unlock** (hold Shift + Rec for 2 seconds, see [the lock](#the-lock)), press **PATTERN** to get to the normal Tracker, **then Config**.
 6. The Tracker restarts into i2 DECK.
 
+## Boot splash
+
+The original Tracker starts on an i2 DECK splash instead of Polyend's logo and loading bar. The big dotted i2 settles into its 5x7 grid dot by dot, the four i2 colours sweep under it (and across the pads), "interactive" types in, then i2 DECK, the versions and a dot progress bar that follows the real project load. The status line only reports what is true: **SD OK**, **USB** (a computer has set up the USB port; **NO USB** with a charge-only cable) and **RADIO** (the FM receiver answered).
+
+![i2 DECK boot splash](img/00_boot.png)
+
+![The boot splash, frame by frame](img/00b_boot_sequence.png)
+
+- It plays inside the ~2 seconds the Tracker already spends opening the last project, so it adds no boot time. A big project keeps the finished splash up while the bar fills.
+- A Tracker that starts in MUSIC (`boot=music` with `lock=off`) shows a shorter version. `splash=short` or `splash=off` (still, no motion and no pad sweep) in `settings.txt` change it.
+- Before the splash starts, the screen shows the mark's empty dot grid, never the Polyend logo. What can't change: the bootloader's own screen while it flashes a firmware file (Config > Firmware update or the pinhole recovery). It lives on a separate chip.
+- Tracker+ and Mini keep Polyend's start screen.
+
 ## How i2 DECK works
 
 The Tracker starts on the **home screen**. The eight buttons under the screen pick what is above them: a deck, **MUSIC** (the normal Tracker), or the **Mac / Win** switch. The home screen has two pages: **button 8 (MORE / BACK)** turns it. Page 1 holds CUT, GRADE, HUB and STATIC; page 2 holds MIXER, FILE and SETUP. HOME from a deck goes back to that deck's page.
@@ -206,6 +219,7 @@ DIAL 1 FRAME | RIGHT | LEFT    (wheel job: name | clockwise | anticlockwise)
 os=mac          mac or win
 boot=deck       deck or music (music only works with lock=off)
 lock=on         on or off: the File / Config lock
+splash=full     full, short or off: the boot splash
 grade=resolve   resolve or premiere: GRADE's app
 app=premiere    resolve or premiere: MIXER, FILE and SETUP's app
 freq=981        STATIC's station, in 100 kHz
@@ -216,6 +230,15 @@ p1=885 ... p8=1079   station presets
 ### Hardware test checklist
 
 v0.2 (passed on Ian's Tracker, Nov 14): boots to i2 DECK, USB keys reach Windows over a data-rated cable.
+
+Boot splash (after v0.4):
+1. **Power on.** Note everything the screen shows from switch-on: does the backlight show anything before the empty dot grid (bootloader)? No Polyend logo anywhere. The dots settle into i2, the colour band sweeps, "interactive" types in, then i2 DECK, the bar and the status line. Smooth, no flashing, no black blink between the grid and the animation.
+2. **Pads.** One soft sweep across the 48 pads, left to right with the colour band, then all dark before the home screen.
+3. **Status line.** With a data cable to a computer: SD OK, USB, RADIO. With no cable (or a charge-only one): NO USB. Does USB come up during the splash, or only later?
+4. **Timing.** Boot to the i2 DECK home takes as long as before (about 2 s on the splash with a small project). With a big project the finished splash waits and the bar keeps moving. The bar ends full, then the home screen appears.
+5. **Versions.** Bottom left reads V0.4, the CE version and the build id of the .ptf.
+6. **Settings.** `splash=short`: quicker version. `splash=off`: the finished splash, still, no pad sweep. `lock=off` + `boot=music`: the short version, then MUSIC. Turn the Mac/Win switch: `splash=` stays in `settings.txt`.
+7. **No card.** Boot without the SD card: "Please insert SD card" shows as before; insert it and the splash carries on.
 
 v0.4 (use a data-rated USB-C cable):
 1. **Buttons.** From the home screen and from inside a deck, locked and unlocked: NOTE, INSTRUMENT, FX1, FX2, MASTER, FILE, CONFIG open CUT, GRADE, HUB, STATIC, MIXER, FILE, SETUP. PATTERN opens the Tracker. Params, Performance, the four Sample buttons and Song do nothing.
@@ -240,7 +263,7 @@ v0.3:
 
 ### Testing on a computer
 
-`tools/i2deck/host/` runs the firmware's own interface code on a PC with scripted input. It renders the screens to PNG, logs every key, note and radio command, fails if a key is left held, and checks each layer and the whole frame against the display chip's limits.
+`tools/i2deck/host/` runs the firmware's own interface code on a PC with scripted input. It renders the screens (and the boot splash, `00*_boot_*.png`) to PNG, logs every key, note and radio command, fails if a key is left held, and checks each layer and the whole frame against the display chip's limits.
 
 ```sh
 sh tools/i2deck/host/run.sh        # needs g++, Python 3 and Pillow; output in tools/i2deck/host/out/
@@ -264,6 +287,8 @@ sh tools/i2deck/host/run.sh        # needs g++, Python 3 and Pillow; output in t
 | [`core/interface/i2Deck/i2Mcu.h`](../core/interface/i2Deck/i2Mcu.h) | MIXER's Mackie Control encoding (tested by the harness) |
 | [`tools/i2deck/APP_DECKS.md`](../tools/i2deck/APP_DECKS.md) | Research notes: MIXER (Mackie Control in Premiere and Resolve), FILE and SETUP shortcuts, with sources |
 | [`core/source/mtMidi.cpp`](../core/source/mtMidi.cpp), [`core/include/Platform.h`](../core/include/Platform.h) | i2 DECK takes the USB MIDI input while it is open (pitch bend, pressure and sysex added for MIXER), and gives it back |
+| [`core/interface/i2Deck/i2Splash.*`](../core/interface/i2Deck/) | The boot splash (no Tracker dependencies; rendered and checked by the harness) |
+| [`core/libs/NewDisplay/startScreen.cpp`](../core/libs/NewDisplay/startScreen.cpp), [`display.cpp`](../core/libs/NewDisplay/display.cpp), [`core/interface/core/interfaceMisc.cpp`](../core/interface/core/interfaceMisc.cpp) | Original Tracker: the start screen draws the splash, the power-on and font-load frames show its dot grid, the start screen's ticks drive it and the pad sweep. Polyend's logo is left out |
 | [`core/interface/i2Deck/i2Glitch.*`](../core/interface/i2Deck/) | STATIC's glitch processor (no Tracker dependencies; tested by the harness) |
 | [`core/AudioEngine/AudioEffectI2Glitch.*`](../core/AudioEngine/) | Puts the glitch processor in the line-in stream (`AudioInput`, `audioEngine::connectInputToMixer`). Original Tracker only |
 | [`core/interface/core/interface.cpp`](../core/interface/core/interface.cpp) | The lock: in the Tracker's screens, `switchModuleByButton` sends File and Config to i2 DECK while locked |

@@ -5,6 +5,13 @@
 #include "displayControls.h"
 #include "startScreenControl.h"
 
+#if !defined(PLATFORM_IMX)
+#include "i2Deck/i2Canvas.h"
+#include "i2Deck/i2Splash.h"
+
+static i2arc::Ft812Gfx i2SplashGfx;
+#endif
+
 //--------------------------------------------------------------------------------
 //--------------------------------------------------------------------------------
 //--------------------------------------------------------------------------------
@@ -88,6 +95,22 @@ void cStartScreen::setData(void* data)
 //--------------------------------------------------------------------------------
 void cStartScreen::update()
 {
+#if !defined(PLATFORM_IMX)
+    // i2 edition: the original Tracker shows the i2 DECK boot splash. `data`
+    // is the splash frame Interface::initStartScreen hands over and moves on
+    // every tick (time, real load progress, status).
+    const i2splash::Frame* frame = reinterpret_cast<const i2splash::Frame*>(data);
+    i2SplashGfx.beginLayer();
+    if (frame != nullptr)
+    {
+        i2splash::draw(i2SplashGfx, *frame);
+    }
+    else
+    {
+        i2splash::drawGrid(i2SplashGfx);
+    }
+    i2SplashGfx.endLayer();
+#else
 #define bitmap_index 0
 
     API_SAVE_CONTEXT();
@@ -142,4 +165,5 @@ void cStartScreen::update()
     }
 
     API_RESTORE_CONTEXT();
+#endif
 }
