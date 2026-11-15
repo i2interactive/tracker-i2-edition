@@ -117,9 +117,14 @@ Adobe has published only a few of Color Mode's default keys. Each line in `i2/De
 
 ![HUB deck](img/07_hub.png)
 
-Sends **USB MIDI** instead of keys: each pad is a note (pad number 0-47, channel = page), and the wheel sends relative control changes 1-7 (65 = up, 63 = down). The labels (queue, interrupt, seed, workflow slots, sizes, quality) are names for those notes.
+Drives the [i2 Creative Hub](https://github.com/i2interactive/i2-creative-hub) (1.22.0 or newer) over **USB MIDI**. In the Hub, open **Settings > MIDI controller (i2 DECK)**, turn it on (Chrome or Edge) and it finds the Tracker by itself; a MIDI light in the Hub's header blinks with every message.
 
-**One-way for now:** the Creative Hub does not listen for MIDI yet, so this deck does nothing until that side is written. Any app with MIDI learn can use it today.
+- **QUEUE:** RUN the open tool, STOP the current render, CLR the queue, AGN runs the last tool again. SEED rolls a new seed, LOCK locks it, B1 / B4 set the batch. PRV / NXT step through results, KEEP stars one, TOSS drops it from the list, SAVE downloads it, SEND puts it into the open tool, OPEN shows it, HOME goes back to the index.
+- **WORKFLOWS:** W1-W16 open tools (pick each slot in the Hub's Settings, or leave it on Auto).
+- **SHAPE + LOOKS:** 1:1, 16:9, 9:16, 4:3; DRAFT / GOOD / BEST quality; UPSCALE IT sends the result to the upscaler; LOOK 1-8 turn the Hub's pinned looks on and off.
+- **Wheel:** STEPS, CFG, DENOISE, SEED, SIZE W, SIZE H, BATCH on the open tool, with a big readout in the Hub.
+
+Each pad is a note on channel 1 (its place on the 12x4 grid, 0-47, velocity 100 on press, note off on release); the wheel sends relative control changes 1-7 (65 = up, 63 = down). Any app with MIDI learn can use it too. The full map is in the Hub's [docs/MIDI.md](https://github.com/i2interactive/i2-creative-hub/blob/main/docs/MIDI.md). The Hub sends nothing back yet, so the pads don't light to show state.
 
 ### STATIC: the FM radio, heard and glitched
 

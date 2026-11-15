@@ -324,10 +324,12 @@ DIAL 5 BIG H   | SHIFT+RIGHT | SHIFT+LEFT
 const char kHub[] = R"DECK(# i2 DECK - HUB: i2 Creative Hub / ComfyUI over USB MIDI.
 # Every pad sends a note (the pad's number, 0-47) on the page's MIDI channel;
 # the wheel sends relative control changes 1-7 (65 = up, 63 = down).
-# The labels are only names: the Hub decides what each note does.
+# The i2 Creative Hub (1.22+) listens: turn on Settings > MIDI controller
+# (i2 DECK) in Chrome or Edge. Full map in the Hub's docs/MIDI.md.
 DECK HUB
 APP Creative Hub
 LINK MIDI
+REV 2
 COLOR 5BE3A5
 
 PAGE RUN
@@ -365,7 +367,7 @@ K W13  SLOT 13
 K W14  SLOT 14
 K W15  SLOT 15
 K W16  SLOT 16
-BLOCK 3 SHAPE + QUALITY
+BLOCK 3 SHAPE + LOOKS
 K 1:1  SQUARE
 K 16:9 WIDE
 K 9:16 TALL
@@ -373,21 +375,21 @@ K 4:3  CLASSIC
 K DRFT DRAFT
 K GOOD GOOD
 K BEST BEST
-K UPSC UPSCALE
-K S1   STYLE 1
-K S2   STYLE 2
-K S3   STYLE 3
-K S4   STYLE 4
-K S5   STYLE 5
-K S6   STYLE 6
-K S7   STYLE 7
-K S8   STYLE 8
+K UPSC UPSCALE IT
+K S1   LOOK 1
+K S2   LOOK 2
+K S3   LOOK 3
+K S4   LOOK 4
+K S5   LOOK 5
+K S6   LOOK 6
+K S7   LOOK 7
+K S8   LOOK 8
 DIAL 1 STEPS
 DIAL 2 CFG
 DIAL 3 DENOISE
 DIAL 4 SEED
-DIAL 5 WIDTH
-DIAL 6 HEIGHT
+DIAL 5 SIZE W
+DIAL 6 SIZE H
 DIAL 7 BATCH
 )DECK";
 
