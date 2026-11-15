@@ -95,6 +95,7 @@ enum class Button : uint8_t
     Delete,
     Copy,
     Insert,
+    Rec,
 };
 
 enum class Sfx : uint8_t

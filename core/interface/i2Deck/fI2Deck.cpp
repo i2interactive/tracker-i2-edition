@@ -8,6 +8,7 @@
 #include "mtStructs.h"
 
 #include "core/songTimer.h"
+#include "mtAudioEngine.h"
 
 #include "i2DeckApp.h"
 
@@ -15,6 +16,7 @@ extern uint8_t externalRamScratchBuff[];
 
 cI2Deck i2Deck;
 static cI2Deck* DK = &i2Deck;
+bool cI2Deck::locked = true;
 
 namespace
 {
@@ -244,12 +246,49 @@ class TrackerIo final : public i2deck::DeckIo
         return name != nullptr ? name : "";
     }
 
+    virtual void radioAudio(bool on, uint8_t volume) override
+    {
+        Radio* r = radio();
+        Sgtl5000* codec = platform ? platform->getCodecAudio() : nullptr;
+        if (r == nullptr || codec == nullptr) return;
+        if (on)
+        {
+            // the tuner into the line input, played through the live stream
+            r->enableLineInput(true);
+            codec->setInputType(Sgtl5000::InputType::kLineIn);
+            codec->setLineInLevel(mtProject.values.gainRadio * 15 / 100);
+            engine.forceLineInStreamVolume(volume > 100 ? 100 : volume);
+            audioRouted = true;
+        }
+        else if (audioRouted)
+        {
+            // back to the jack, at the project's line-in volume
+            engine.setInputConfigOutsideRecorderInterfaceModule();
+            audioRouted = false;
+        }
+    }
+    virtual void glitch([[maybe_unused]] const i2glitch::Params& p) override
+    {
+#if !defined(PLATFORM_IMX)
+        engine.getAudioInput()->getI2Glitch()->set(p);
+#endif
+    }
+    virtual float audioLevel() override
+    {
+        float l = engine.getLineInRMS(0);
+        float r = engine.getLineInRMS(1);
+        return l > r ? l : r;
+    }
+    virtual float tempo() override { return mtProject.values.globalTempo; }
+
     virtual void leave(uint8_t where) override { DK->requestLeave(where); }
+    virtual void lockChanged(bool on) override { cI2Deck::setLocked(on); }
 
   private:
     UsbKeyboard* keyboard() { return platform ? platform->getUsbKeyboard() : nullptr; }
     Radio* radio() { return platform ? platform->getRadio() : nullptr; }
     bool radioIsOn = false;
+    bool audioRouted = false;
 };
 
 TrackerServices s_services;
@@ -269,6 +308,7 @@ bool toButton(uint8_t b, Button& out)
         case interfaceButtonDelete: out = Button::Delete; return true;
         case interfaceButtonCopy: out = Button::Copy; return true;
         case interfaceButtonInsert: out = Button::Insert; return true;
+        case interfaceButtonRec: out = Button::Rec; return true;
         default: break;
     }
     if (b >= interfaceButton0 && b <= interfaceButton7)
@@ -281,10 +321,11 @@ bool toButton(uint8_t b, Button& out)
 
 const uint8_t kKeyButtons[] = {
     interfaceButtonPlay,  interfaceButtonLeft,   interfaceButtonRight, interfaceButtonUp,     interfaceButtonDown,
-    interfaceButtonShift, interfaceButtonDelete, interfaceButtonCopy,  interfaceButtonInsert,
+    interfaceButtonShift, interfaceButtonDelete, interfaceButtonCopy,  interfaceButtonInsert, interfaceButtonRec,
 };
 
-// The Tracker's own screens stay one press away.
+// The Tracker's own screens stay one press away (File and Config only when
+// unlocked: see Interface::switchModuleByButton).
 const uint8_t kModuleButtons[] = {
     interfaceButtonPerformance, interfaceButtonParams,     interfaceButtonFile,      interfaceButtonConfig,
     interfaceButtonMaster,      interfaceButtonSamplePlay, interfaceButtonSampleEdit, interfaceButtonSampleRec,
@@ -302,10 +343,18 @@ static void functSwitchModule(uint8_t button);
 bool cI2Deck::startsFirst(Platform* platform)
 {
     s_services.platform = platform;
-    return !i2deck::DeckApp::bootToMusic(s_services);
+    bool music = false, lock = true;
+    i2deck::DeckApp::readBoot(s_services, music, lock);
+    locked = lock;
+    return !music || lock;
 }
 
-void cI2Deck::start([[maybe_unused]] uint32_t options)
+void cI2Deck::flashLocked()
+{
+    if (running) s_app.flashLocked();
+}
+
+void cI2Deck::start(uint32_t options)
 {
     moduleRefresh = 1;
     s_services.platform = platform;
@@ -334,6 +383,11 @@ void cI2Deck::start([[maybe_unused]] uint32_t options)
 
     s_app.setIo(&s_io);
     s_app.begin(s_services);
+    running = true;
+    if (options & kOptLockedRedirect)
+    {
+        s_app.flashLocked(); // sent here from a locked File / Config button
+    }
     for (uint8_t l = 0; l < kLayerCount; l++)
     {
         layerData[l].game = &s_app;

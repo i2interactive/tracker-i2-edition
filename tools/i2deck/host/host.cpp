@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <math.h>
 #include <stdarg.h>
 #include <algorithm>
 #include <string>
@@ -208,6 +209,10 @@ class HostIo : public DeckIo
     int sig = 31;
     std::string rds = "";
     int left = -1;
+    bool audio = false;
+    int volume = -1;
+    i2glitch::Params fx;
+    int lockedNow = -1;
 
     void say(const char* fmt, ...) __attribute__((format(printf, 2, 3)))
     {
@@ -258,10 +263,29 @@ class HostIo : public DeckIo
     int radioSignal() override { return sig; }
     float radioStep() override { return 0.1f; }
     const char* radioText() override { return rds.c_str(); }
+    void radioAudio(bool on, uint8_t vol) override
+    {
+        audio = on && vol > 0; // audible
+        volume = on ? vol : -1;
+        say("radio audio %s vol %d", on ? "on" : "off", vol);
+    }
+    void glitch(const i2glitch::Params& p) override
+    {
+        fx = p;
+        say("glitch on %d fx %02x stut %u frz %u bits %d hold %d stop %u noise %d cut %d damp %d", p.on, p.fx, (unsigned)p.stutterLen,
+            (unsigned)p.freezeLen, p.crushBits, p.crushHold, (unsigned)p.stopStep, p.noise, p.cutoff, p.damp);
+    }
+    float audioLevel() override { return 0.35f; }
+    float tempo() override { return 120.0f; }
     void leave(uint8_t where) override
     {
         left = where;
         say("leave -> %s", where ? "recorder" : "tracker");
+    }
+    void lockChanged(bool on) override
+    {
+        lockedNow = on;
+        say("lock %s", on ? "on" : "off");
     }
     int heldKeys() const
     {
@@ -281,7 +305,7 @@ static bool nameToButton(const char* n, Button& b)
         Button b;
     } k[] = { { "play", Button::Play },     { "left", Button::Left },   { "right", Button::Right },
               { "up", Button::Up },         { "down", Button::Down },   { "delete", Button::Delete },
-              { "copy", Button::Copy },     { "insert", Button::Insert } };
+              { "copy", Button::Copy },     { "insert", Button::Insert }, { "rec", Button::Rec } };
     for (auto& e : k)
     {
         if (!strcmp(n, e.name))
@@ -315,9 +339,9 @@ int main(int argc, char** argv)
     int bad = 0;
     {
         static Deck d;
-        for (uint8_t i = 0; i < kBuiltinDecks; i++)
+        for (uint8_t i = 0; i < kAllDecks; i++)
         {
-            int keys = parseDeck(kBuiltin[i].text, strlen(kBuiltin[i].text), d);
+            int keys = parseDeck(kAll[i]->text, strlen(kAll[i]->text), d);
             int empty = 0, dials = 0;
             for (uint8_t p = 0; p < d.pageCount; p++)
             {
@@ -348,7 +372,16 @@ int main(int argc, char** argv)
                     }
                 }
             }
-            printf("deck %-7s pages %d keys %3d dials %2d problems %d\n", d.name, d.pageCount, keys, dials, empty);
+            for (uint8_t p = 0; p < d.pageCount && kAll[i]->alt; p++)
+            {
+                if (d.pages[p].dials[5].used())
+                {
+                    printf("  !! %s page %d: dial 6 is the app switch in this deck\n", d.name, p);
+                    empty++;
+                }
+            }
+            printf("deck %-7s %-9s rev %d pages %d keys %3d dials %2d problems %d\n", d.name, kAll[i]->app, d.rev, d.pageCount, keys, dials,
+                   empty);
             bad |= empty > 0 || keys == 0;
         }
     }
@@ -364,6 +397,73 @@ int main(int argc, char** argv)
             printf("dot font %d: %2dx%2d px, %5u bytes at %u %s\n", s, i2dot::cellW(s), i2dot::cellH(s), n, i2dot::kAddress[s], fits ? "" : "!! OVERLAPS");
             bad |= !fits;
         }
+    }
+
+    // 3. The glitch processor: every effect on a test tone stays in range,
+    //    and STUTTER really repeats.
+    {
+        static int16_t hist[131072];
+        i2glitch::Core core;
+        core.init(hist, 131072);
+        int16_t l[128], r[128], out[128];
+        uint32_t t = 0;
+        auto tone = [&]() {
+            for (int i = 0; i < 128; i++, t++)
+            {
+                l[i] = (int16_t)(12000 * ((t / 50) % 2 ? 1 : -1) + (int)(t % 997) * 8);
+                r[i] = l[i];
+            }
+        };
+        i2glitch::Params p;
+        p.on = 1;
+        const uint8_t sets[] = { 0, i2glitch::kStutter, i2glitch::kCrush, i2glitch::kStop, i2glitch::kNoise, i2glitch::kFilter, i2glitch::kFreeze,
+                                 (uint8_t)(i2glitch::kStutter | i2glitch::kCrush | i2glitch::kFilter | i2glitch::kNoise), 0 };
+        int problems = 0;
+        for (uint8_t fxs : sets)
+        {
+            p.fx = fxs;
+            p.stutterLen = 5512;
+            p.crushBits = 4;
+            p.crushHold = 8;
+            p.stopStep = 300;
+            p.noise = 20000;
+            p.cutoff = 3000;
+            p.damp = 6000;
+            core.set(p);
+            int64_t energy = 0;
+            std::vector<int16_t> rec;
+            for (int b = 0; b < 400; b++)
+            {
+                tone();
+                if (core.idle())
+                {
+                    core.feed(l, r, 128);
+                    memcpy(out, l, sizeof(out));
+                }
+                else core.process(l, r, out, 128);
+                for (int i = 0; i < 128; i++)
+                {
+                    energy += (int64_t)out[i] * out[i];
+                    rec.push_back(out[i]);
+                }
+            }
+            bool repeats = true;
+            if (fxs == i2glitch::kStutter)
+            {
+                // well after the start, the output is periodic in stutterLen
+                for (size_t i = 20000; i + 5512 < rec.size() && repeats; i += 101)
+                {
+                    if ((i % 5512) < 70 || (i % 5512) > 5512 - 70) continue;
+                    repeats = rec[i] == rec[i + 5512];
+                }
+            }
+            double rms = sqrt((double)energy / (double)rec.size());
+            bool ok = rms > 50.0 && rms < 33000.0 && repeats;
+            if (fxs == i2glitch::kStop) ok = repeats; // ends in silence
+            printf("glitch fx %02x rms %7.1f %s\n", fxs, rms, ok ? "" : "!! PROBLEM");
+            problems += !ok;
+        }
+        bad |= problems > 0;
     }
 
     app.setIo(&io);
@@ -459,6 +559,45 @@ int main(int argc, char** argv)
             advance(1);
         }
         else if (!strcmp(cmd, "shift") && sscanf(line, "%*s %d", &a) == 1) app.button(Button::Shift, a != 0);
+        else if (!strcmp(cmd, "rec") && sscanf(line, "%*s %d", &a) == 1) app.button(Button::Rec, a != 0);
+        else if (!strcmp(cmd, "expectlocked") && sscanf(line, "%*s %d", &a) == 1)
+        {
+            if (io.lockedNow != a || (int)app.locked() != a)
+            {
+                printf("!! expected locked=%d, have %d / %d\n", a, io.lockedNow, (int)app.locked());
+                bad = 1;
+            }
+        }
+        else if (!strcmp(cmd, "expectfx") && sscanf(line, "%*s %x", &a) == 1)
+        {
+            if (io.fx.fx != a)
+            {
+                printf("!! expected glitch fx %02x, have %02x\n", a, io.fx.fx);
+                bad = 1;
+            }
+        }
+        else if (!strcmp(cmd, "expectaudio") && sscanf(line, "%*s %d", &a) == 1)
+        {
+            if ((int)io.audio != a)
+            {
+                printf("!! expected radio audio %d, have %d\n", a, (int)io.audio);
+                bad = 1;
+            }
+        }
+        else if (!strcmp(cmd, "settings"))
+        {
+            // write a settings file, e.g.: settings lock=off
+            const char* t = strchr(line, ' ');
+            std::string v = t ? t + 1 : "";
+            for (auto& c : v) if (c == ' ') c = '\n';
+            sv.saveText("i2/Deck/settings.txt", v.c_str(), v.size());
+        }
+        else if (!strcmp(cmd, "restart"))
+        {
+            app.end();
+            app.begin(sv);
+            advance(2);
+        }
         else if (!strcmp(cmd, "btn") && sscanf(line, "%*s %63s", name) == 1 && nameToButton(name, btn))
         {
             app.button(btn, true);

@@ -525,6 +525,22 @@ void Interface::deactivateModule(hModule module)
 
 void Interface::switchModuleByButton(hModule module, uint8_t button, uint32_t options)
 {
+#if !defined(PLATFORM_IMX)
+    // i2 edition: while locked, File and Config lead to the i2 DECK home
+    // screen instead (which says LOCKED). This is also the way back to the
+    // deck from the Tracker's screens.
+    if (cI2Deck::isLocked() && (button == interfaceButtonFile || button == interfaceButtonConfig))
+    {
+        if (module == &i2Deck)
+        {
+            i2Deck.flashLocked();
+            return;
+        }
+        deactivateModule(module);
+        activateModule(&i2Deck, cI2Deck::kOptLockedRedirect);
+        return;
+    }
+#endif
     int8_t index = getButtonIndex(button);
     if (index < 0)
         return;

@@ -1,5 +1,6 @@
 #include "i2DeckApp.h"
 
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -86,7 +87,23 @@ const ActName kActs[] = {
     { "@P3", kActPreset, 2 },      { "@P4", kActPreset, 3 },      { "@P5", kActPreset, 4 },
     { "@P6", kActPreset, 5 },      { "@P7", kActPreset, 6 },      { "@P8", kActPreset, 7 },
     { "@SEND", kActSend, 0 },      { "@RECORDER", kActRecorder, 0 }, { "@TUNE", kActTune, 0 },
+    { "@STUTTER", kActGlitch, kFxStutter }, { "@CRUSH", kActGlitch, kFxCrush },
+    { "@STOP", kActGlitch, kFxStop },       { "@SCAN", kActGlitch, kFxScan },
+    { "@FILTER", kActGlitch, kFxFilter },   { "@FREEZE", kActGlitch, kFxFreeze },
+    { "@R2", kActRepeat, 0 },  { "@R4", kActRepeat, 1 },  { "@R8", kActRepeat, 2 },
+    { "@R16", kActRepeat, 3 }, { "@R32", kActRepeat, 4 }, { "@R64", kActRepeat, 5 },
+    { "@RSSI", kActRssi, 0 },  { "@MON", kActMon, 0 },    { "@KILL", kActKill, 0 },
+    { "@AMOUNT", kActAmount, 0 }, { "@LENGTH", kActLength, 0 }, { "@VOLUME", kActVolume, 0 },
 };
+
+const char* const kFxNames[kFxCount] = { "STUTTER", "CRUSH", "TAPE STOP", "SCAN", "FILTER", "FREEZE" };
+// stutter lengths as note values (1/4 = one beat at the project tempo)
+const char* const kDivNames[kDivisions] = { "1/2", "1/4", "1/8", "1/16", "1/32", "1/64" };
+
+// Hard-to-hit-by-accident unlock: hold Shift + Rec, press screen buttons
+// 8, 1, 8 within 3 seconds.
+constexpr uint8_t kCombo[3] = { 7, 0, 7 };
+constexpr uint32_t kComboMs = 3000;
 
 bool parseAct(const char* s, const char* e, uint8_t& act, uint8_t& arg)
 {
@@ -175,6 +192,14 @@ int parseDeck(const char* text, size_t length, Deck& out)
             const char* v = s + 4;
             trim(v, e);
             out.link = startsWord(v, e, "MIDI") ? kLinkMidi : startsWord(v, e, "RADIO") ? kLinkRadio : kLinkKeys;
+        }
+        else if (startsWord(s, e, "REV"))
+        {
+            const char* v = s + 3;
+            trim(v, e);
+            char num[8];
+            copyText(num, sizeof(num), v, e);
+            out.rev = (uint8_t)strtoul(num, nullptr, 10);
         }
         else if (startsWord(s, e, "COLOR"))
         {
@@ -286,51 +311,87 @@ int parseDeck(const char* text, size_t length, Deck& out)
 //==============================================================================================================
 // Settings
 //==============================================================================================================
-bool DeckApp::bootToMusic(Services& services)
+namespace
 {
-    char buf[256];
+constexpr size_t kSettingsCap = 384;
+
+// "key=value" lookup; the value runs to the end of the line.
+bool setting(const char* buf, const char* key, const char*& value)
+{
+    size_t n = strlen(key);
+    for (const char* p = buf; (p = strstr(p, key)) != nullptr; p += n)
+    {
+        if ((p == buf || p[-1] == '\n') && p[n] == '=')
+        {
+            value = p + n + 1;
+            return true;
+        }
+    }
+    return false;
+}
+
+bool settingIs(const char* buf, const char* key, const char* word)
+{
+    const char* v = nullptr;
+    return setting(buf, key, v) && strncmp(v, word, strlen(word)) == 0;
+}
+} // namespace
+
+void DeckApp::readBoot(Services& services, bool& music, bool& lock)
+{
+    char buf[kSettingsCap];
+    music = false;
+    lock = true;
     int32_t n = services.loadText(kSettingsPath, buf, sizeof(buf) - 1);
-    if (n <= 0) return false;
+    if (n <= 0) return;
     buf[n] = 0;
-    return strstr(buf, "boot=music") != nullptr;
+    music = settingIs(buf, "boot", "music");
+    lock = !settingIs(buf, "lock", "off");
 }
 
 void DeckApp::loadSettings()
 {
-    char buf[256];
+    readBoot(*sv, bootMusic, lockSetting);
+    char buf[kSettingsCap];
     int32_t n = sv->loadText(kSettingsPath, buf, sizeof(buf) - 1);
     if (n <= 0) return;
     buf[n] = 0;
-    if (strstr(buf, "os=win")) mac = false;
-    if (strstr(buf, "os=mac")) mac = true;
-    const char* f = strstr(buf, "freq=");
-    if (f)
+    const char* v = nullptr;
+    if (settingIs(buf, "os", "win")) mac = false;
+    if (settingIs(buf, "os", "mac")) mac = true;
+    gradeSide = settingIs(buf, "grade", "premiere") ? 1 : 0;
+    if (setting(buf, "freq", v))
     {
-        long v = strtol(f + 5, nullptr, 10);
-        if (v >= 875 && v <= 1080) freq = v / 10.0f;
+        long f = strtol(v, nullptr, 10);
+        if (f >= 875 && f <= 1080) freq = f / 10.0f;
+    }
+    if (setting(buf, "vol", v))
+    {
+        long f = strtol(v, nullptr, 10);
+        if (f >= 0 && f <= 100) volume = (uint8_t)f;
     }
     for (int i = 0; i < 8; i++)
     {
-        char key[16];
-        snprintf(key, sizeof(key), "p%d=", i + 1);
-        const char* q = strstr(buf, key);
-        if (q)
+        char key[4] = { 'p', (char)('1' + i), 0, 0 };
+        if (setting(buf, key, v))
         {
-            long v = strtol(q + 3, nullptr, 10);
-            if (v >= 875 && v <= 1080) presets[i] = v / 10.0f;
+            long f = strtol(v, nullptr, 10);
+            if (f >= 875 && f <= 1080) presets[i] = f / 10.0f;
         }
     }
 }
 
 void DeckApp::saveSettings()
 {
-    char buf[256];
-    int n = snprintf(buf, sizeof(buf), "os=%s\nboot=deck\nfreq=%d\n", mac ? "mac" : "win", (int)(freq * 10 + 0.5f));
+    char buf[kSettingsCap];
+    int n = snprintf(buf, sizeof(buf), "os=%s\nboot=%s\nlock=%s\ngrade=%s\nfreq=%d\nvol=%d\n", mac ? "mac" : "win",
+                     bootMusic ? "music" : "deck", lockSetting ? "on" : "off", gradeSide ? "premiere" : "resolve",
+                     (int)(freq * 10 + 0.5f), volume);
     for (int i = 0; i < 8 && n > 0 && n < (int)sizeof(buf) - 12; i++)
     {
         n += snprintf(buf + n, sizeof(buf) - (size_t)n, "p%d=%d\n", i + 1, (int)(presets[i] * 10 + 0.5f));
     }
-    if (n > 0) sv->saveText(kSettingsPath, buf, (size_t)n);
+    if (n > 0 && n < (int)sizeof(buf)) sv->saveText(kSettingsPath, buf, (size_t)n);
 }
 
 //==============================================================================================================
@@ -346,21 +407,36 @@ void DeckApp::begin(Services& services)
     deckIndex = -1;
     held = 0;
     shift = false;
+    recHeld = false;
     last[0] = 0;
+    flashText[0] = 0;
     memset(passKey, 0, sizeof(passKey));
+    memset(comboSeq, 0, sizeof(comboSeq));
     loadSettings();
+    if (io) io->lockChanged(locked());
     dirtyMask = 0x3F;
     lightPads();
+}
+
+void DeckApp::radioOff()
+{
+    if (!radioOn || !io) return;
+    memset(fxHeld, 0, sizeof(fxHeld));
+    latched = 0;
+    repeatHeld = 0;
+    rssiMod = false;
+    i2glitch::Params off;
+    sent = off;
+    io->glitch(off);
+    io->radioAudio(false, 0);
+    io->radioPower(false);
+    radioOn = false;
 }
 
 void DeckApp::end()
 {
     releaseAll();
-    if (radioOn && io)
-    {
-        io->radioPower(false);
-        radioOn = false;
-    }
+    radioOff();
 }
 
 void DeckApp::releaseAll()
@@ -375,26 +451,41 @@ void DeckApp::releaseAll()
     }
     held = 0;
     memset(passKey, 0, sizeof(passKey));
+    // momentary glitches end with their pads
+    bool hadFx = repeatHeld != 0;
+    for (uint8_t i = 0; i < kFxCount; i++)
+    {
+        hadFx = hadFx || fxHeld[i] != 0;
+        fxHeld[i] = 0;
+    }
+    repeatHeld = 0;
+    if (hadFx && radioOn && io)
+    {
+        io->radioTune(freq); // in case SCAN was hopping
+        pushGlitch();
+    }
 }
 
 void DeckApp::goHome()
 {
     releaseAll();
-    if (radioOn && io)
-    {
-        io->radioPower(false);
-        radioOn = false;
-    }
+    radioOff();
     home = true;
     dirtyMask = 0x3F;
     lightPads();
+}
+
+const BuiltinDeck& DeckApp::source(uint8_t index) const
+{
+    const BuiltinDeck& b = kBuiltin[index];
+    return (gradeSide && b.alt) ? *b.alt : b;
 }
 
 void DeckApp::openDeck(uint8_t index)
 {
     if (index >= kBuiltinDecks) return;
     releaseAll();
-    const BuiltinDeck& b = kBuiltin[index];
+    const BuiltinDeck& b = source(index);
     size_t size = 0;
     char* text = reinterpret_cast<char*>(sv->scratch(size) + kTextOffset);
 
@@ -405,6 +496,24 @@ void DeckApp::openDeck(uint8_t index)
     if (n > 0)
     {
         keys = parseDeck(text, (size_t)n, deck());
+        uint8_t fileRev = deck().rev;
+        parseDeck(b.text, strlen(b.text), deck());
+        if (fileRev < deck().rev)
+        {
+            // The firmware's deck is newer than the card's: keep the old
+            // file as <name>-old.txt and put the new one in its place.
+            char old[48];
+            size_t baseLen = strlen(b.file) > 4 ? strlen(b.file) - 4 : strlen(b.file);
+            snprintf(old, sizeof(old), "i2/Deck/%.*s-old.txt", (int)baseLen, b.file);
+            sv->saveText(old, text, (size_t)n);
+            sv->saveText(path, b.text, strlen(b.text));
+            keys = 0;
+            flash("NEW DECK: OLD ONE SAVED AS -OLD");
+        }
+        else if (keys > 0)
+        {
+            keys = parseDeck(text, (size_t)n, deck());
+        }
     }
     else
     {
@@ -419,20 +528,19 @@ void DeckApp::openDeck(uint8_t index)
 
     home = false;
     deckIndex = (int8_t)index;
-    pageIndex = 0;
-    dialSel = 0;
-    memset(dialNet, 0, sizeof(dialNet));
     last[0] = 0;
-    if (deck().link == kLinkRadio && io)
+    if (deck().link == kLinkRadio && io && !radioOn)
     {
         io->radioPower(true);
         io->radioTune(freq);
         radioOn = true;
         rds[0] = 0;
+        inLevel = 0;
         memset(history, 0, sizeof(history));
+        monitor();
+        pushGlitch();
     }
-    dirtyMask = 0x3F;
-    lightPads();
+    setPage(0);
 }
 
 void DeckApp::setPage(uint8_t p)
@@ -441,8 +549,37 @@ void DeckApp::setPage(uint8_t p)
     pageIndex = p;
     dialSel = 0;
     memset(dialNet, 0, sizeof(dialNet));
+    glitchPage = false;
+    for (uint8_t i = 0; i < kPads; i++)
+    {
+        uint8_t a = page().pads[i].act;
+        glitchPage = glitchPage || a == kActGlitch || a == kActRepeat;
+    }
+    // first wheel job: the first dial that exists
+    for (uint8_t i = 0; i < kDials; i++)
+    {
+        if (page().dials[i].used())
+        {
+            dialSel = i;
+            break;
+        }
+    }
     dirtyMask = 0x3F;
     lightPads();
+}
+
+bool DeckApp::padOn(uint8_t p) const
+{
+    if (held & (1ULL << p)) return true;
+    const PadDef& d = page().pads[p];
+    switch (d.act)
+    {
+        case kActGlitch: return d.arg == kFxFreeze && (latched & i2glitch::kFreeze);
+        case kActRssi: return rssiMod;
+        case kActMon: return monOn;
+        case kActSend: return sending;
+        default: return false;
+    }
 }
 
 void DeckApp::lightPads()
@@ -453,7 +590,7 @@ void DeckApp::lightPads()
         uint8_t level = 0;
         if (!home && page().pads[p].used())
         {
-            level = (held & (1ULL << p)) ? 2 : 1;
+            level = padOn(p) ? 2 : 1;
         }
         sv->padLight(p, level);
     }
@@ -466,11 +603,190 @@ void DeckApp::note(const char* text)
     dirtyMask |= 1u << kLayerLive;
 }
 
+void DeckApp::flash(const char* text)
+{
+    strncpy(flashText, text, sizeof(flashText) - 1);
+    flashText[sizeof(flashText) - 1] = 0;
+    flashUntil = 0; // the 2.5 s start at the next tick
+    dirtyMask |= 1u << kLayerLive;
+}
+
+void DeckApp::flashLocked()
+{
+    flash("LOCKED");
+}
+
 void DeckApp::tap(i2ctl::KeyCombo c)
 {
     if (!io || c.isEmpty()) return;
     io->keyDown(c.key, c.mods);
     io->keyUp(c.key);
+}
+
+//==============================================================================================================
+// Lock: Shift + Rec held, then screen buttons 8, 1, 8 within 3 seconds
+//==============================================================================================================
+void DeckApp::combo(int screen)
+{
+    comboSeq[0] = comboSeq[1];
+    comboSeq[1] = comboSeq[2];
+    comboSeq[2] = (uint8_t)(screen + 1);
+    comboTime[0] = comboTime[1];
+    comboTime[1] = comboTime[2];
+    comboTime[2] = nowMs;
+    bool match = true;
+    for (int i = 0; i < 3; i++) match = match && comboSeq[i] == kCombo[i] + 1;
+    if (!match || comboTime[2] - comboTime[0] > kComboMs) return;
+    memset(comboSeq, 0, sizeof(comboSeq));
+    if (!lockSetting)
+    {
+        flash("LOCK IS OFF IN SETTINGS");
+        return;
+    }
+    unlocked = !unlocked;
+    if (io) io->lockChanged(locked());
+    flash(unlocked ? "UNLOCKED UNTIL RESTART" : "LOCKED");
+    dirtyMask |= 1u << kLayerChrome;
+}
+
+//==============================================================================================================
+// Glitch (STATIC)
+//==============================================================================================================
+uint32_t DeckApp::beatSamples() const
+{
+    float bpm = io ? io->tempo() : 120.0f;
+    if (bpm < 40.0f || bpm > 400.0f) bpm = 120.0f;
+    return (uint32_t)(60.0f / bpm * (float)i2glitch::kSampleRate);
+}
+
+void DeckApp::monitor()
+{
+    // MON off keeps the tuner on the line input, at volume 0, so the jack's
+    // signal never leaks in while STATIC is open
+    if (io && radioOn) io->radioAudio(true, monOn ? volume : 0);
+}
+
+// Turns the deck's state into the processor's parameters, and sends them
+// when they change.
+void DeckApp::pushGlitch()
+{
+    if (!io) return;
+    i2glitch::Params p;
+    p.on = radioOn ? 1 : 0;
+    uint8_t fx = latched;
+    for (uint8_t i = 0; i < kFxCount; i++)
+    {
+        if (fxHeld[i]) fx |= (uint8_t)(1u << i);
+    }
+    if (repeatHeld) fx |= i2glitch::kStutter;
+    if (rssiMod) fx |= i2glitch::kFilter;
+    p.fx = radioOn ? fx : 0;
+
+    auto a = [&](uint8_t i) { return amount[i] * 0.01f; };
+    uint8_t div = repeatHeld ? repeatDiv : division;
+    p.stutterLen = (beatSamples() * 2) >> div;
+    p.freezeLen = (uint32_t)((0.20f - 0.18f * a(kFxFreeze)) * i2glitch::kSampleRate);
+    p.crushBits = (uint8_t)(16 - (int)(a(kFxCrush) * 13.0f));
+    p.crushHold = (uint8_t)(1 + (int)(a(kFxCrush) * a(kFxCrush) * 31.0f));
+    float stopSec = 1.6f - 1.4f * a(kFxStop);
+    p.stopStep = (uint32_t)(16777216.0f / (stopSec * i2glitch::kSampleRate));
+    p.noise = (uint16_t)((burst ? 26000.0f : 2500.0f) * a(kFxScan));
+
+    // filter: the amount closes it from 7 kHz to about 200 Hz; with RSSI on,
+    // a weak signal closes it further
+    float fc = 7000.0f;
+    if (fxHeld[kFxFilter]) fc = 7000.0f * expf(-3.5f * a(kFxFilter));
+    if (rssiMod)
+    {
+        float sg = signal / 60.0f;
+        if (sg < 0) sg = 0;
+        if (sg > 1) sg = 1;
+        float fr = 150.0f + sg * sg * 6000.0f;
+        if (fr < fc) fc = fr;
+    }
+    float coef = 2.0f * sinf(3.14159265f * fc / (float)i2glitch::kSampleRate);
+    if (coef > 0.99f) coef = 0.99f;
+    p.cutoff = (uint16_t)(coef * 32767.0f);
+    float q = fxHeld[kFxFilter] ? 1.4f - 1.1f * a(kFxFilter) : 1.0f;
+    p.damp = (uint16_t)(q * 16384.0f);
+
+    if (memcmp(&p, &sent, sizeof(p)) != 0)
+    {
+        sent = p;
+        io->glitch(p);
+    }
+}
+
+void DeckApp::glitchAction(uint8_t act, uint8_t arg, bool down)
+{
+    switch (act)
+    {
+        case kActGlitch:
+            if (arg >= kFxCount) return;
+            if (arg == kFxFreeze)
+            {
+                if (down) latched ^= i2glitch::kFreeze;
+            }
+            else if (down)
+            {
+                fxHeld[arg]++;
+                if (arg == kFxScan)
+                {
+                    nextHop = nowMs;
+                    nextBurst = nowMs;
+                }
+            }
+            else if (fxHeld[arg])
+            {
+                fxHeld[arg]--;
+                if (arg == kFxScan && !fxHeld[arg])
+                {
+                    io->radioTune(freq); // back to the station
+                    settleUntil = nowMs + 600;
+                    burst = false;
+                }
+            }
+            if (down) focus = arg;
+            break;
+        case kActRepeat:
+            if (arg >= kDivisions) return;
+            if (down)
+            {
+                repeatHeld++;
+                repeatDiv = arg;
+                focus = kFxStutter;
+            }
+            else if (repeatHeld)
+            {
+                repeatHeld--;
+            }
+            break;
+        case kActRssi:
+            if (down) rssiMod = !rssiMod;
+            break;
+        case kActMon:
+            if (down)
+            {
+                monOn = !monOn;
+                monitor();
+            }
+            break;
+        case kActKill:
+            if (down)
+            {
+                latched = 0;
+                rssiMod = false;
+            }
+            break;
+        default: return;
+    }
+    pushGlitch();
+    if (down && (act == kActRssi || act == kActMon || act == kActKill || (act == kActGlitch && arg == kFxFreeze)))
+    {
+        lightPads();
+        dirtyMask |= 1u << kLayerBlockA | 1u << kLayerBlockB | 1u << kLayerBlockC;
+    }
+    dirtyMask |= 1u << kLayerLive | 1u << kLayerChrome;
 }
 
 //==============================================================================================================
@@ -512,12 +828,13 @@ void DeckApp::runAction(uint8_t act, uint8_t arg)
         case kActSend:
             sending = !sending;
             lastCc = 255;
+            dirtyMask |= 1u << kLayerChrome;
             break;
         case kActRecorder:
             saveSettings();
             io->leave(1);
             break;
-        default: break;
+        default: glitchAction(act, arg, true); break;
     }
     dirtyMask |= 1u << kLayerLive;
 }
@@ -531,6 +848,8 @@ void DeckApp::pad(uint8_t padIndex, bool down)
 
     if (down)
     {
+        if (held & (1ULL << padIndex)) return; // already down
+        held |= 1ULL << padIndex;
         if (d.act != kActNone)
         {
             runAction(d.act, d.arg);
@@ -549,14 +868,18 @@ void DeckApp::pad(uint8_t padIndex, bool down)
         {
             io->midiNote(padIndex, true, (uint8_t)(pageIndex + 1));
         }
-        held |= 1ULL << padIndex;
         note(d.label[0] ? d.label : d.mn);
         sv->padLight(padIndex, 2);
         dirtyMask |= 1u << blockLayer;
     }
     else if (held & (1ULL << padIndex))
     {
-        if (d.act == kActNone && deck().link == kLinkKeys)
+        held &= ~(1ULL << padIndex);
+        if (d.act == kActGlitch || d.act == kActRepeat)
+        {
+            glitchAction(d.act, d.arg, false);
+        }
+        else if (d.act == kActNone && deck().link == kLinkKeys)
         {
             io->keyUp(heldKey[padIndex]);
         }
@@ -564,8 +887,7 @@ void DeckApp::pad(uint8_t padIndex, bool down)
         {
             io->midiNote(padIndex, false, (uint8_t)(pageIndex + 1));
         }
-        held &= ~(1ULL << padIndex);
-        sv->padLight(padIndex, 1);
+        sv->padLight(padIndex, padOn(padIndex) ? 2 : 1);
         dirtyMask |= 1u << blockLayer;
     }
 }
@@ -577,11 +899,21 @@ void DeckApp::button(Button b, bool down)
         shift = down;
         return;
     }
+    if (b == Button::Rec)
+    {
+        recHeld = down;
+        return;
+    }
 
     int screen = (int)b - (int)Button::Screen0;
     if (screen >= 0 && screen <= 7)
     {
         if (!down) return;
+        if (shift && recHeld)
+        {
+            combo(screen); // the unlock combo; screen buttons do nothing else
+            return;
+        }
         if (home)
         {
             if (screen < kBuiltinDecks) openDeck((uint8_t)screen);
@@ -597,6 +929,15 @@ void DeckApp::button(Button b, bool down)
         if (screen == 7)
         {
             goHome(); // button 8 is HOME in every deck
+            return;
+        }
+        if (screen == 5 && hasAlt())
+        {
+            // button 6 switches the deck's app (GRADE: Resolve / Premiere)
+            gradeSide = gradeSide ? 0 : 1;
+            saveSettings();
+            openDeck((uint8_t)deckIndex);
+            flash(source((uint8_t)deckIndex).app);
             return;
         }
         if (screen == 6 && deck().pageCount > 1)
@@ -631,6 +972,7 @@ void DeckApp::button(Button b, bool down)
     }
     if (down)
     {
+        if (passKey[slot]) return;
         if (shift) c.mods |= i2ctl::kModShift;
         io->keyDown(c.key, c.mods);
         passKey[slot] = c.key;
@@ -645,11 +987,33 @@ void DeckApp::button(Button b, bool down)
 void DeckApp::jog(int16_t steps)
 {
     if (home || !io || steps == 0) return;
-    const DialDef& d = page().dials[dialSel];
-    if (!d.used()) return;
     int n = steps > 0 ? steps : -steps;
     if (n > 8) n = 8;
     bool cw = steps > 0;
+
+    // On the GLITCH page, the wheel sets the strength of a held effect.
+    bool fxDown = repeatHeld != 0;
+    for (uint8_t i = 0; i < kFxCount; i++) fxDown = fxDown || fxHeld[i] != 0;
+    const DialDef& d = page().dials[dialSel];
+    if (glitchPage && (fxDown || d.act == kActAmount))
+    {
+        if (focus == kFxStutter)
+        {
+            // for STUTTER the wheel picks the length; clockwise = shorter
+            int v = division + (cw ? 1 : -1);
+            division = (uint8_t)(v < 0 ? 0 : v >= kDivisions ? kDivisions - 1 : v);
+            if (repeatHeld) repeatDiv = division;
+            pushGlitch();
+            dirtyMask |= 1u << kLayerChrome | 1u << kLayerLive;
+            return;
+        }
+        int v = amount[focus] + (cw ? n : -n) * (shift ? 10 : 2);
+        amount[focus] = (uint8_t)(v < 0 ? 0 : v > 100 ? 100 : v);
+        pushGlitch();
+        dirtyMask |= 1u << kLayerChrome | 1u << kLayerLive;
+        return;
+    }
+    if (!d.used()) return;
 
     if (d.act == kActTune)
     {
@@ -658,6 +1022,18 @@ void DeckApp::jog(int16_t steps)
         if (freq > 108.0f) freq = 108.0f;
         io->radioTune(freq);
         rds[0] = 0;
+    }
+    else if (d.act == kActLength)
+    {
+        int v = division + (cw ? 1 : -1);
+        division = (uint8_t)(v < 0 ? 0 : v >= kDivisions ? kDivisions - 1 : v);
+        pushGlitch();
+    }
+    else if (d.act == kActVolume)
+    {
+        int v = volume + (cw ? n : -n) * (shift ? 10 : 2);
+        volume = (uint8_t)(v < 0 ? 0 : v > 100 ? 100 : v);
+        monitor();
     }
     else if (deck().link == kLinkKeys)
     {
@@ -677,29 +1053,61 @@ void DeckApp::jog(int16_t steps)
 void DeckApp::tick(uint32_t now)
 {
     nowMs = now;
+    if (flashText[0] && flashUntil == 0)
+    {
+        flashUntil = now + 2500;
+        if (flashUntil == 0) flashUntil = 1;
+    }
+    else if (flashText[0] && (int32_t)(now - flashUntil) >= 0)
+    {
+        flashText[0] = 0;
+        dirtyMask |= 1u << kLayerLive;
+    }
     if (!radioOn || !io) return;
     io->radioPoll();
+
+    // SCAN: hop the tuner around the station and spit noise bursts
+    if (fxHeld[kFxScan])
+    {
+        if ((int32_t)(now - nextBurst) >= 0 && sv)
+        {
+            burst = !burst;
+            nextBurst = now + 20 + (uint32_t)irand(*sv, burst ? 60 : 140);
+            pushGlitch();
+        }
+        if ((int32_t)(now - nextHop) >= 0 && sv)
+        {
+            // every 120-400 ms, up to +/- 4 MHz away (tuning takes ~60 ms)
+            float span = 0.4f + 3.6f * amount[kFxScan] * 0.01f;
+            hopFreq = freq + (frand(*sv) * 2.0f - 1.0f) * span;
+            if (hopFreq < 87.5f) hopFreq = 87.5f;
+            if (hopFreq > 108.0f) hopFreq = 108.0f;
+            io->radioTune(hopFreq);
+            nextHop = now + 400 - (uint32_t)(2.8f * amount[kFxScan]);
+            settleUntil = now + 600;
+        }
+    }
+
     if (now - lastPoll < 250) return;
     lastPoll = now;
 
     float f = io->radioFreq();
     int s = io->radioSignal();
     const char* t = io->radioText();
-    bool changed = false;
-    if (f > 80.0f && (f > freq + 0.04f || f < freq - 0.04f))
+    bool scanning = fxHeld[kFxScan] || (int32_t)(now - settleUntil) < 0;
+    if (!scanning && f > 80.0f && (f > freq + 0.04f || f < freq - 0.04f))
     {
         freq = f; // a seek landed
-        changed = true;
     }
     signal = s;
     memmove(history, history + 1, kHistory - 1);
     history[kHistory - 1] = (uint8_t)(s < 0 ? 0 : s > 75 ? 75 : s);
-    changed = true;
-    if (t && strncmp(t, rds, sizeof(rds) - 1) != 0)
+    float lv = io->audioLevel();
+    if (lv >= 0) inLevel = lv;
+    if (!scanning && t && strncmp(t, rds, sizeof(rds) - 1) != 0)
     {
         strncpy(rds, t, sizeof(rds) - 1);
         rds[sizeof(rds) - 1] = 0;
-        changed = true;
     }
     if (sending)
     {
@@ -712,7 +1120,8 @@ void DeckApp::tick(uint32_t now)
             io->midiCc(20, lastCc, 16);
         }
     }
-    if (changed) dirtyMask |= 1u << kLayerLive;
+    if (rssiMod) pushGlitch();
+    dirtyMask |= 1u << kLayerLive;
 }
 
 //==============================================================================================================
@@ -760,6 +1169,33 @@ void DeckApp::chip(Gfx& g, int16_t rightX, const char* text, bool solid, uint32_
     outLeft = (int16_t)(x0 - 6);
 }
 
+void DeckApp::dialValue(uint8_t i, char* out, size_t cap) const
+{
+    const DialDef& d = page().dials[i];
+    if (d.act == kActTune)
+    {
+        int f10 = (int)(freq * 10 + 0.5f);
+        snprintf(out, cap, "%d.%d", f10 / 10, f10 % 10);
+    }
+    else if (d.act == kActAmount)
+    {
+        if (focus == kFxStutter) snprintf(out, cap, "%s", kDivNames[repeatHeld ? repeatDiv : division]);
+        else snprintf(out, cap, "%d", amount[focus]);
+    }
+    else if (d.act == kActLength)
+    {
+        snprintf(out, cap, "%s", kDivNames[division]);
+    }
+    else if (d.act == kActVolume)
+    {
+        snprintf(out, cap, "%d", volume);
+    }
+    else
+    {
+        snprintf(out, cap, "%s%d", dialNet[i] > 0 ? "+" : "", dialNet[i]);
+    }
+}
+
 void DeckApp::drawChrome(Gfx& g)
 {
     const uint32_t accent = home ? kHomeAccent : deck().accent;
@@ -781,6 +1217,10 @@ void DeckApp::drawChrome(Gfx& g)
         link = deck().link == kLinkKeys ? ((io && io->keysConnected()) ? "USB KEYS" : "NO USB") : deck().link == kLinkMidi ? "MIDI OUT" : (sending ? "FM + CC" : "FM");
     }
     chip(g, x, link, true, accent, x);
+    if (lockSetting && unlocked)
+    {
+        chip(g, x, "UNLOCKED", false, accent, x); // the Tracker's own screens are open
+    }
 
     // dial strip
     for (uint8_t i = 0; i < 8; i++)
@@ -801,6 +1241,28 @@ void DeckApp::drawChrome(Gfx& g)
             snprintf(nameBuf, sizeof(nameBuf), "BACK");
             snprintf(value, sizeof(value), "HOME");
         }
+        else if (i == 5 && hasAlt())
+        {
+            // the app switch: two stacked choices, the live one filled
+            const BuiltinDeck& b = kBuiltin[deckIndex];
+            const char* sides[2] = { b.app, b.alt->app };
+            const uint32_t colors[2] = { b.accent, b.alt->accent };
+            for (uint8_t sIdx = 0; sIdx < 2; sIdx++)
+            {
+                int16_t y0 = (int16_t)(430 + sIdx * 24);
+                bool live = sIdx == gradeSide;
+                g.color(live ? colors[sIdx] : 0x55555C);
+                g.rect(506, y0, 594, (int16_t)(y0 + 20), 3);
+                if (!live)
+                {
+                    g.color(kDark);
+                    g.rect(507, (int16_t)(y0 + 1), 593, (int16_t)(y0 + 19), 2);
+                }
+                g.color(live ? kDark : kGrey);
+                g.text(550, (int16_t)(y0 + 3), kFont12, kCenterX, sides[sIdx]);
+            }
+            continue;
+        }
         else if (i == 6 && deck().pageCount > 1)
         {
             snprintf(nameBuf, sizeof(nameBuf), "PAGE");
@@ -812,15 +1274,7 @@ void DeckApp::drawChrome(Gfx& g)
             if (!d.used()) continue;
             on = i == dialSel;
             snprintf(nameBuf, sizeof(nameBuf), "%s", d.name);
-            if (d.act == kActTune)
-            {
-                int f10 = (int)(freq * 10 + 0.5f);
-                snprintf(value, sizeof(value), "%d.%d", f10 / 10, f10 % 10);
-            }
-            else
-            {
-                snprintf(value, sizeof(value), "%s%d", dialNet[i] > 0 ? "+" : "", dialNet[i]);
-            }
+            dialValue(i, value, sizeof(value));
         }
         if (on)
         {
@@ -838,8 +1292,8 @@ void DeckApp::drawHome(Gfx& g)
 {
     g.color(kInk);
     g.dot(12, 50, 2, kLeft, "PICK A DECK");
-    g.color(kGrey);
-    g.text(788, 66, kFont12, kRight, "Press the button under a deck.");
+    g.color(flashText[0] ? kHomeAccent : kGrey);
+    g.text(788, 66, kFont12, kRight, flashText[0] ? flashText : "Press the button under a deck.");
 
     int16_t boxes[8 * 4];
     for (uint8_t i = 0; i < 8; i++)
@@ -864,7 +1318,7 @@ void DeckApp::drawHome(Gfx& g)
         {
             const BuiltinDeck& b = kBuiltin[i];
             key = b.key;
-            app = b.app;
+            app = source(i).app;
             b1 = b.blurb1;
             b2 = b.blurb2;
             st = b.status;
@@ -910,7 +1364,11 @@ void DeckApp::drawLive(Gfx& g)
     char big[24];
     char sub[64];
 
-    if (radio)
+    if (radio && glitchPage)
+    {
+        drawGlitch(g);
+    }
+    else if (radio)
     {
         int f10 = (int)(freq * 10 + 0.5f);
         snprintf(big, sizeof(big), "%d.%d FM", f10 / 10, f10 % 10);
@@ -921,85 +1379,89 @@ void DeckApp::drawLive(Gfx& g)
         snprintf(big, sizeof(big), "%s", sel.used() ? sel.name : "--");
         snprintf(sub, sizeof(sub), "%s%s", last[0] ? "Key: " : "Press a pad to see its name", last);
     }
-    g.color(kGrey);
-    g.text(12, 46, kFont12, kLeft, radio ? "TUNED" : "WHEEL");
-    g.color(accent);
-    g.dot(12, 70, 2, kLeft, big);
-    g.color(0xC9C9C2);
-    g.text(12, 124, kFont14, kLeft, sub);
-
-    // bars
-    for (uint8_t i = 0; i < 4; i++)
+    if (!(radio && glitchPage))
     {
-        const char* label = "";
-        char value[8] = "";
-        int16_t fill0 = 392, fill1 = 392;
+        g.color(kGrey);
+        g.text(12, 46, kFont12, kLeft, radio ? "TUNED" : "WHEEL");
+        g.color(accent);
+        g.dot(12, 70, 2, kLeft, big);
+        g.color(flashText[0] ? accent : 0xC9C9C2);
+        g.text(12, 124, kFont14, kLeft, flashText[0] ? flashText : sub);
+
+        // bars
+        for (uint8_t i = 0; i < 4; i++)
+        {
+            const char* label = "";
+            char value[8] = "";
+            int16_t fill0 = 392, fill1 = 392;
+            if (radio)
+            {
+                if (i == 0)
+                {
+                    label = "SIGNAL";
+                    int s = signal < 0 ? 0 : signal > 75 ? 75 : signal;
+                    fill1 = (int16_t)(392 + s * 228 / 75);
+                    snprintf(value, sizeof(value), "%d", signal);
+                }
+                else if (i == 1)
+                {
+                    label = "CC OUT";
+                    int v = sending && lastCc != 255 ? lastCc : 0;
+                    fill1 = (int16_t)(392 + v * 228 / 127);
+                    snprintf(value, sizeof(value), "%s", sending ? "ON" : "OFF");
+                }
+                else continue;
+            }
+            else
+            {
+                const DialDef& d = page().dials[i];
+                if (!d.used()) continue;
+                label = d.name;
+                int n = dialNet[i] < -20 ? -20 : dialNet[i] > 20 ? 20 : dialNet[i];
+                int16_t mid = 506;
+                fill0 = n < 0 ? (int16_t)(mid + n * 57 / 10) : mid;
+                fill1 = n < 0 ? mid : (int16_t)(mid + n * 57 / 10);
+                if (n == 0)
+                {
+                    fill0 = (int16_t)(mid - 1);
+                    fill1 = (int16_t)(mid + 1);
+                }
+                snprintf(value, sizeof(value), "%s%d", dialNet[i] > 0 ? "+" : "", dialNet[i]);
+            }
+            int16_t y = (int16_t)(50 + i * 26);
+            g.color(kGrey);
+            g.text(322, (int16_t)(y - 1), kFont12, kLeft, label);
+            g.color(kTrack);
+            g.rect(392, y, 620, (int16_t)(y + 12), 2);
+            g.color(i == dialSel || radio ? accent : 0x8E8E88);
+            g.rect(fill0, y, fill1 > fill0 ? fill1 : (int16_t)(fill0 + 1), (int16_t)(y + 12), 1);
+            g.color(kInk);
+            g.dot(676, (int16_t)(y - 1), 0, kRight, value);
+        }
+
         if (radio)
         {
-            if (i == 0)
+            // signal scope: the last 14 seconds, newest on the right
+            g.color(kGrey);
+            g.text(322, 104, kFont12, kLeft, "SCOPE");
+            g.color(kTrack);
+            g.rect(392, 176, 676, 177);
+            g.color(accent);
+            int16_t bars[kHistory * 4];
+            int n = 0;
+            for (uint8_t i = 0; i < kHistory; i++)
             {
-                label = "SIGNAL";
-                int s = signal < 0 ? 0 : signal > 75 ? 75 : signal;
-                fill1 = (int16_t)(392 + s * 228 / 75);
-                snprintf(value, sizeof(value), "%d", signal);
+                int16_t h = (int16_t)(history[i] * 70 / 75);
+                if (h < 1) continue;
+                int16_t* q = &bars[n++ * 4];
+                q[0] = (int16_t)(392 + i * 5);
+                q[1] = (int16_t)(176 - h);
+                q[2] = (int16_t)(q[0] + 4);
+                q[3] = 176;
             }
-            else if (i == 1)
-            {
-                label = "CC OUT";
-                int v = sending && lastCc != 255 ? lastCc : 0;
-                fill1 = (int16_t)(392 + v * 228 / 127);
-                snprintf(value, sizeof(value), "%s", sending ? "ON" : "OFF");
-            }
-            else continue;
+            g.rects(bars, n);
         }
-        else
-        {
-            const DialDef& d = page().dials[i];
-            if (!d.used()) continue;
-            label = d.name;
-            int n = dialNet[i] < -20 ? -20 : dialNet[i] > 20 ? 20 : dialNet[i];
-            int16_t mid = 506;
-            fill0 = n < 0 ? (int16_t)(mid + n * 57 / 10) : mid;
-            fill1 = n < 0 ? mid : (int16_t)(mid + n * 57 / 10);
-            if (n == 0)
-            {
-                fill0 = (int16_t)(mid - 1);
-                fill1 = (int16_t)(mid + 1);
-            }
-            snprintf(value, sizeof(value), "%s%d", dialNet[i] > 0 ? "+" : "", dialNet[i]);
-        }
-        int16_t y = (int16_t)(50 + i * 26);
-        g.color(kGrey);
-        g.text(322, (int16_t)(y - 1), kFont12, kLeft, label);
-        g.color(kTrack);
-        g.rect(392, y, 620, (int16_t)(y + 12), 2);
-        g.color(i == dialSel || radio ? accent : 0x8E8E88);
-        g.rect(fill0, y, fill1 > fill0 ? fill1 : (int16_t)(fill0 + 1), (int16_t)(y + 12), 1);
-        g.color(kInk);
-        g.dot(676, (int16_t)(y - 1), 0, kRight, value);
-    }
 
-    if (radio)
-    {
-        // signal scope: the last 14 seconds, newest on the right
-        g.color(kGrey);
-        g.text(322, 104, kFont12, kLeft, "SCOPE");
-        g.color(kTrack);
-        g.rect(392, 176, 676, 177);
-        g.color(accent);
-        int16_t bars[kHistory * 4];
-        int n = 0;
-        for (uint8_t i = 0; i < kHistory; i++)
-        {
-            int16_t h = (int16_t)(history[i] * 70 / 75);
-            if (h < 1) continue;
-            int16_t* q = &bars[n++ * 4];
-            q[0] = (int16_t)(392 + i * 5);
-            q[1] = (int16_t)(176 - h);
-            q[2] = (int16_t)(q[0] + 4);
-            q[3] = 176;
-        }
-        g.rects(bars, n);
     }
 
     // pages
@@ -1017,6 +1479,105 @@ void DeckApp::drawLive(Gfx& g)
     }
 }
 
+// STATIC's GLITCH page: the station on the left, one row per effect in the
+// middle (its strength; lit while engaged), what the radio is doing on the
+// right.
+void DeckApp::drawGlitch(Gfx& g)
+{
+    const uint32_t accent = deck().accent;
+    uint8_t engaged = sent.fx;
+    char big[24];
+    char sub[64] = "";
+
+    int f10 = (int)(freq * 10 + 0.5f);
+    snprintf(big, sizeof(big), "%d.%d FM", f10 / 10, f10 % 10);
+    if (flashText[0])
+    {
+        snprintf(sub, sizeof(sub), "%s", flashText);
+    }
+    else if (engaged == 0)
+    {
+        snprintf(sub, sizeof(sub), "%s", monOn ? "Hold a pad to glitch the radio" : "MON is off: radio muted");
+    }
+    else
+    {
+        size_t n = 0;
+        for (uint8_t i = 0; i < kFxCount && n < sizeof(sub) - 12; i++)
+        {
+            if (!(engaged & (1u << i))) continue;
+            if (i == kFxStutter)
+                n += (size_t)snprintf(sub + n, sizeof(sub) - n, "%sSTUTTER %s", n ? " + " : "", kDivNames[repeatHeld ? repeatDiv : division]);
+            else
+                n += (size_t)snprintf(sub + n, sizeof(sub) - n, "%s%s", n ? " + " : "", kFxNames[i]);
+        }
+    }
+    g.color(kGrey);
+    g.text(12, 46, kFont12, kLeft, "GLITCHING");
+    g.color(accent);
+    g.dot(12, 70, 2, kLeft, big);
+    g.color(flashText[0] || engaged ? accent : 0xC9C9C2);
+    g.text(12, 124, kFont14, kLeft, sub);
+    g.color(kGrey);
+    g.text(12, 150, kFont12, kLeft, rds[0] ? rds : "");
+
+    // one row per effect: strength bar; filled in the accent while engaged
+    int16_t track[kFxCount * 4];
+    int16_t fills[2][kFxCount * 4];
+    int nf[2] = { 0, 0 };
+    for (uint8_t i = 0; i < kFxCount; i++)
+    {
+        int16_t y = (int16_t)(48 + i * 21);
+        int16_t* t = &track[i * 4];
+        t[0] = 404;
+        t[1] = y;
+        t[2] = 620;
+        t[3] = (int16_t)(y + 10);
+        bool on = engaged & (1u << i);
+        int16_t* q = &fills[on][nf[on]++ * 4];
+        q[0] = 404;
+        q[1] = y;
+        int pct = i == kFxStutter ? (division + 1) * 100 / kDivisions : amount[i];
+        q[2] = (int16_t)(405 + pct * 215 / 100);
+        q[3] = (int16_t)(y + 10);
+    }
+    g.color(kTrack);
+    g.rects(track, kFxCount, 2);
+    g.color(0x6E6E68);
+    g.rects(fills[0], nf[0], 2);
+    if (nf[1])
+    {
+        g.color(accent);
+        g.rects(fills[1], nf[1], 2);
+    }
+    for (uint8_t i = 0; i < kFxCount; i++)
+    {
+        int16_t y = (int16_t)(48 + i * 21);
+        bool on = engaged & (1u << i);
+        g.color(on ? accent : i == focus ? kInk : kGrey);
+        g.text(322, (int16_t)(y - 2), kFont12, kLeft, kFxNames[i]);
+        char v[8];
+        if (i == kFxStutter) snprintf(v, sizeof(v), "%s", kDivNames[repeatHeld ? repeatDiv : division]);
+        else if (i == kFxFilter && rssiMod && !fxHeld[kFxFilter]) snprintf(v, sizeof(v), "RSSI");
+        else if (i == kFxFreeze && (latched & i2glitch::kFreeze)) snprintf(v, sizeof(v), "HELD");
+        else snprintf(v, sizeof(v), "%d", amount[i]);
+        g.text(676, (int16_t)(y - 2), kFont12, kRight, v);
+    }
+
+    // the radio: input level, signal strength, monitor
+    int lv = (int)(inLevel * 1.4f * 88.0f);
+    if (lv > 88) lv = 88;
+    int sg = signal < 0 ? 0 : signal > 75 ? 75 : signal;
+    int16_t meters[2 * 4] = { 700, 120, 788, 128, 700, 148, 788, 156 };
+    g.color(kTrack);
+    g.rects(meters, 2, 2);
+    int16_t lit[2 * 4] = { 700, 120, (int16_t)(701 + lv), 128, 700, 148, (int16_t)(701 + sg * 88 / 75), 156 };
+    g.color(accent);
+    g.rects(lit, 2, 2);
+    g.color(kGrey);
+    g.text(700, 104, kFont12, kLeft, monOn ? "AUDIO" : "AUDIO (MUTED)");
+    g.text(700, 132, kFont12, kLeft, "SIGNAL");
+}
+
 void DeckApp::drawBlock(Gfx& g, uint8_t block)
 {
     const uint32_t accent = deck().accent;
@@ -1032,7 +1593,7 @@ void DeckApp::drawBlock(Gfx& g, uint8_t block)
     {
         uint8_t padIndex = (uint8_t)((i / 4) * 12 + block * 4 + (i % 4));
         const PadDef& d = page().pads[padIndex];
-        int kind = !d.used() ? 0 : ((held >> padIndex) & 1ULL) ? 2 : 1;
+        int kind = !d.used() ? 0 : padOn(padIndex) ? 2 : 1;
         int16_t* q = &boxes[kind][count[kind]++ * 4];
         q[0] = (int16_t)(bx + (i % 4) * 63);
         q[1] = (int16_t)(206 + (i / 4) * 54);
@@ -1054,7 +1615,7 @@ void DeckApp::drawBlock(Gfx& g, uint8_t block)
         {
             uint8_t padIndex = (uint8_t)((i / 4) * 12 + block * 4 + (i % 4));
             const PadDef& d = page().pads[padIndex];
-            bool on = (held >> padIndex) & 1ULL;
+            bool on = padOn(padIndex);
             if (!d.used() || (int)on != pass) continue;
             if (!any)
             {

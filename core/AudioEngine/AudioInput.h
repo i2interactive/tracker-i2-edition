@@ -2,6 +2,9 @@
 #define AUDIOENGINE_AUDIOINPUT_H_
 
 #include "Audio.h"
+#if !defined(PLATFORM_IMX)
+#include "AudioEffectI2Glitch.h"
+#endif
 
 class AudioInput
 {
@@ -24,6 +27,11 @@ class AudioInput
     AudioInputStream* getUsbStream();
     AudioAnalyzeRMS* getStreamRmsI2s(InputChannels channel);
     AudioAmplifier* getUsbRecordingAmplifier(InputChannels channel);
+#if !defined(PLATFORM_IMX)
+    // i2 edition: STATIC's glitch processor, between the live line-in
+    // stream and the output mixer. Pass-through unless i2 DECK engages it.
+    AudioEffectI2Glitch* getI2Glitch() { return &i2Glitch; }
+#endif
 
   private:
     AudioInputStream i2sStream;
@@ -39,6 +47,9 @@ class AudioInput
     AudioStereoToMono stereoToMono;
     AudioEffectDynamics gate[InputChannels::kChannelsCount];
     AudioAnalyzeRMS streamRms[InputChannels::kChannelsCount];
+#if !defined(PLATFORM_IMX)
+    AudioEffectI2Glitch i2Glitch;
+#endif
 
     std::vector<AudioConnection*> connections;
 };

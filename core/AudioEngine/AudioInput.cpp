@@ -48,6 +48,15 @@ AudioInput::AudioInput()
       new AudioConnection(&stereoToMono, InputChannels::kLeft, &gate[InputChannels::kLeft], 0));
     connections.push_back(
       new AudioConnection(&stereoToMono, InputChannels::kRight, &gate[InputChannels::kRight], 0));
+
+#if !defined(PLATFORM_IMX)
+    // i2 edition: the live stream goes to the mixer through the glitch
+    // processor (see audioEngine::connectInputToMixer)
+    connections.push_back(
+      new AudioConnection(&stereoToMono, InputChannels::kLeft, &i2Glitch, InputChannels::kLeft));
+    connections.push_back(
+      new AudioConnection(&stereoToMono, InputChannels::kRight, &i2Glitch, InputChannels::kRight));
+#endif
 }
 
 AudioEffectDynamics* AudioInput::getGate(InputChannels channel)

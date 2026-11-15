@@ -12,6 +12,7 @@
 // Game, Services and DeckIo interfaces.
 
 #include "i2Gfx.h"
+#include "i2Glitch.h"
 #include "i2Keys.h"
 
 namespace i2deck
@@ -39,7 +40,29 @@ enum Action : uint8_t
     kActSend,   // toggle signal -> MIDI CC
     kActRecorder,
     kActTune, // dial
+    // STATIC's GLITCH page
+    kActGlitch, // arg = effect (kFx*), held = on (FREEZE latches)
+    kActRepeat, // arg = beat division index, held = stutter at that length
+    kActRssi,   // latch: signal strength drives the filter
+    kActMon,    // latch: hear the radio
+    kActKill,   // everything off
+    kActAmount, // dial: the strength of the last effect touched
+    kActLength, // dial: stutter length (beat division)
+    kActVolume, // dial: how loud the radio is
 };
+
+// Glitch effects, in pad order
+enum GlitchFx : uint8_t
+{
+    kFxStutter,
+    kFxCrush,
+    kFxStop,
+    kFxScan,
+    kFxFilter,
+    kFxFreeze,
+    kFxCount,
+};
+constexpr uint8_t kDivisions = 6; // note values 1/2 to 1/64
 
 struct PadDef
 {
@@ -76,6 +99,7 @@ struct Deck
     char name[8];
     char app[24];
     uint8_t link;
+    uint8_t rev; // REV line: a newer built-in replaces an older file on the card
     uint32_t accent;
     uint8_t pageCount;
     Page pages[kMaxPages];
@@ -88,15 +112,21 @@ struct BuiltinDeck
 {
     const char* file; // on the SD card, under i2/Deck/
     const char* key;  // launcher name
-    const char* app;
+    const char* app;  // also the name on the app switch
     const char* blurb1;
     const char* blurb2;
     const char* status;
     uint32_t accent;
     const char* text;
+    // A second app for the same deck (GRADE: Resolve / Premiere). Screen
+    // button 6 switches between them; the choice is kept in settings.txt.
+    const BuiltinDeck* alt;
 };
 constexpr uint8_t kBuiltinDecks = 4;
 extern const BuiltinDeck kBuiltin[kBuiltinDecks];
+// Every deck text the firmware carries, for the harness to check.
+constexpr uint8_t kAllDecks = 5;
+extern const BuiltinDeck* const kAll[kAllDecks];
 
 // Hardware the decks drive. Implemented by the firmware and by the host.
 class DeckIo
@@ -117,8 +147,16 @@ class DeckIo
     virtual int radioSignal() = 0; // 0-75
     virtual float radioStep() = 0; // channel spacing in MHz (0.1 or 0.2)
     virtual const char* radioText() = 0;
+    // on: route the tuner to the line input and play it (volume 0-100);
+    // off: put the line input back the way the Tracker leaves it.
+    virtual void radioAudio(bool on, uint8_t volume) = 0;
+    virtual void glitch(const i2glitch::Params& p) = 0;
+    virtual float audioLevel() = 0; // line-in RMS 0-1, or < 0 if none yet
+    virtual float tempo() = 0;      // the project's BPM
     // 0 = the Tracker (music), 1 = the Tracker's sample recorder
     virtual void leave(uint8_t where) = 0;
+    // The Tracker's File and Config screens follow this.
+    virtual void lockChanged(bool locked) = 0;
 };
 
 class DeckApp final : public i2arc::Game
@@ -136,8 +174,13 @@ class DeckApp final : public i2arc::Game
     virtual void button(Button b, bool down) override;
     virtual void jog(int16_t steps) override;
 
-    // True when settings ask to start in the Tracker instead of i2 DECK.
-    static bool bootToMusic(Services& sv);
+    // Start-up settings: boot=music asks to start in the Tracker; lock=off
+    // turns the lock off. Defaults: start in i2 DECK, locked.
+    static void readBoot(Services& sv, bool& music, bool& lock);
+
+    bool locked() const { return lockSetting && !unlocked; }
+    // A locked Tracker screen was asked for: say so.
+    void flashLocked();
 
   private:
     enum : uint8_t
@@ -151,13 +194,24 @@ class DeckApp final : public i2arc::Game
     };
 
     void openDeck(uint8_t index);
+    const BuiltinDeck& source(uint8_t index) const;
+    bool hasAlt() const { return !home && deckIndex >= 0 && kBuiltin[deckIndex].alt != nullptr; }
+    void flash(const char* text);
+    void combo(int screen);
+    // glitch
+    void pushGlitch();
+    void glitchAction(uint8_t act, uint8_t arg, bool down);
+    void monitor();
+    uint32_t beatSamples() const;
     void goHome();
+    void radioOff();
     void setPage(uint8_t p);
     void releaseAll();
     void runAction(uint8_t act, uint8_t arg);
     void loadSettings();
     void saveSettings();
     void lightPads();
+    bool padOn(uint8_t p) const;
     void note(const char* text);
     const Page& page() const { return deck().pages[pageIndex]; }
     Deck& deck() const { return *deckPtr; }
@@ -168,6 +222,8 @@ class DeckApp final : public i2arc::Game
     void drawHome(Gfx& g);
     void drawLive(Gfx& g);
     void drawBlock(Gfx& g, uint8_t block);
+    void drawGlitch(Gfx& g);
+    void dialValue(uint8_t i, char* out, size_t cap) const;
     void chip(Gfx& g, int16_t rightX, const char* text, bool solid, uint32_t accent, int16_t& outLeft);
 
     Services* sv = nullptr;
@@ -187,6 +243,17 @@ class DeckApp final : public i2arc::Game
     uint8_t passKey[8] = {};
     char last[24] = "";
     uint32_t nowMs = 0;
+    char flashText[32] = "";
+    uint32_t flashUntil = 0;
+
+    // settings
+    bool bootMusic = false;
+    bool lockSetting = true;
+    bool unlocked = false; // the secret combo, until restart
+    uint8_t gradeSide = 0; // 0 = first app, 1 = alt
+    bool recHeld = false;
+    uint8_t comboSeq[3] = {};
+    uint32_t comboTime[3] = {};
 
     // radio
     bool radioOn = false;
@@ -198,6 +265,24 @@ class DeckApp final : public i2arc::Game
     uint8_t history[kHistory] = {};
     uint32_t lastPoll = 0;
     uint8_t lastCc = 255;
+
+    // glitch
+    bool glitchPage = false;
+    bool monOn = true;
+    uint8_t volume = 80;
+    uint8_t amount[kFxCount] = { 50, 60, 50, 60, 60, 40 };
+    uint8_t fxHeld[kFxCount] = {};
+    uint8_t latched = 0; // FREEZE
+    bool rssiMod = false;
+    uint8_t focus = kFxStutter;
+    uint8_t division = 3; // 1/16 note
+    uint8_t repeatHeld = 0;
+    uint8_t repeatDiv = 0;
+    float inLevel = 0;
+    float hopFreq = 0;
+    uint32_t nextHop = 0, nextBurst = 0, settleUntil = 0;
+    bool burst = false;
+    i2glitch::Params sent;
 };
 
 } // namespace i2deck

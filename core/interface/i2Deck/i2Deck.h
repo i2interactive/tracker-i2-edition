@@ -36,10 +36,20 @@ class cI2Deck : public ModuleBase
 
     // True when the Tracker should start in i2 DECK (the default; put
     // "boot=music" in i2/Deck/settings.txt on the SD card to start in the
-    // Tracker instead).
+    // Tracker instead). A locked Tracker always starts in i2 DECK.
     static bool startsFirst(Platform* platform);
 
+    // Lock: while locked, the Tracker's File and Config screens stay shut
+    // (Interface::switchModuleByButton sends those buttons to i2 DECK).
+    // "lock=off" in settings.txt turns it off; Shift + Rec held with screen
+    // buttons 8-1-8 opens it until restart.
+    static bool isLocked() { return locked; }
+    static void setLocked(bool on) { locked = on; }
+    void flashLocked();
+    static constexpr uint32_t kOptLockedRedirect = 1u << 30;
+
   private:
+    static bool locked;
     bool running = false;
     int8_t pendingLeave = -1;
     i2arc::CanvasData layerData[i2arc::kLayerCount];

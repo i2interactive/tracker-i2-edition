@@ -423,14 +423,21 @@ void audioEngine::connectInputToMixer(AudioInput* input, MixerAndFxs<kVoices>* m
 
     constexpr int kTracksAndSendsMixerInputIdx = 3;
 
+#if !defined(PLATFORM_IMX)
+    // i2 edition: through STATIC's glitch processor (pass-through when idle)
+    AudioStream* liveStream = input->getI2Glitch();
+#else
+    AudioStream* liveStream = input->getStereoToMono();
+#endif
+
     connections.push_back(
-      new AudioConnection(input->getStereoToMono(),
+      new AudioConnection(liveStream,
                           AudioInput::InputChannels::kLeft,
                           mixerAndFxs->getTracksAndSendsMixer(MixerAndFxChannelType::kLeft),
                           kTracksAndSendsMixerInputIdx));
 
     connections.push_back(
-      new AudioConnection(input->getStereoToMono(),
+      new AudioConnection(liveStream,
                           AudioInput::InputChannels::kRight,
                           mixerAndFxs->getTracksAndSendsMixer(MixerAndFxChannelType::kRight),
                           kTracksAndSendsMixerInputIdx));
