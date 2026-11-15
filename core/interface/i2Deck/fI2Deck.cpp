@@ -368,8 +368,10 @@ void takeUsbMidi(Platform* platform, bool take)
         midiUsbDefaultActions();
         return;
     }
-    s_ringHead = s_ringTail = 0;
-    s_sysexHead = s_sysexTail = 0;
+    s_ringHead = 0;
+    s_ringTail = 0;
+    s_sysexHead = 0;
+    s_sysexTail = 0;
     UsbMidi::MidiReceiveActions a;
     a.realTime = receiveUsbRealtime;
     a.noteOn = inNoteOn;
