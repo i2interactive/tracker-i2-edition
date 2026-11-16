@@ -17,7 +17,7 @@ It adds **i2 DECK**: a new full-screen interface that turns the Tracker into a c
 The short version:
 1. Back up your SD card.
 2. Put the official Tracker 1.9.2 and CE 1.0 `.ptf` files from [polyend.com/downloads](https://polyend.com/downloads/) in `Firmware/` as a safety net.
-3. Download the newest **polyend-tracker-ce-firmware** artifact from the [Actions tab](https://github.com/i2interactive/tracker-i2-edition/actions/workflows/build.yml). You need to be signed in to GitHub.
+3. Download `PolyendTracker_i2_<version>.ptf` from the [Releases page](https://github.com/i2interactive/tracker-i2-edition/releases). (Test builds of every change are on the [Actions tab](https://github.com/i2interactive/tracker-i2-edition/actions/workflows/build.yml); you need to be signed in to GitHub for those.)
 4. Copy `PolyendTracker_i2_<version>.ptf` to `Firmware/` without renaming it.
 5. On the Tracker, run **Config > Firmware > Firmware update**. From v0.3 on, Config is locked, and from v0.4 the Config button in i2 DECK opens the SETUP deck. So: on the i2 DECK home screen, **unlock** (hold Shift + Rec for 2 seconds, see [the lock](#the-lock)), press **PATTERN** to get to the normal Tracker, **then Config**.
 6. The Tracker restarts into i2 DECK.
@@ -276,7 +276,7 @@ sh tools/i2deck/host/run.sh        # needs g++, Python 3 and Pillow; output in t
 
 ## Roadmap
 
-- **Creative Hub:** make the Hub listen to the HUB deck (Web MIDI), then send state back to the Tracker's screen
+- **Creative Hub:** the Hub listens to the HUB deck since Creative Hub 1.22.0; next, send state back to the Tracker's screen and pads
 - **GRADE:** fill in Premiere Color Mode's real latch keys once checked; a small helper for true lift/gamma/gain control
 - **MIXER / FILE / SETUP:** fill in the real Resolve and Premiere keys once checked; trim MIXER to what each host really answers
 - **STATIC:** record the glitched output straight into a sample; per-effect presets
