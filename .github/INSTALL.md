@@ -17,7 +17,6 @@ A start-to-finish guide: from a stock Tracker to i2 DECK. Plan on 20–30 minute
 - An original Polyend Tracker and its microSD card
 - A computer with an SD card reader (or the USB adapter that came with the Tracker)
 - A **data-rated** USB-C cable to your computer. A charge-only cable powers the Tracker, but the deck shows **NO USB** and the computer sees nothing. If in doubt, use the cable that syncs your phone
-- A free GitHub account, needed to download builds from the Actions tab (Part 3)
 
 ---
 
@@ -59,12 +58,10 @@ Unzip them if they're zipped, and copy the `.ptf` files to the card's `Firmware`
 
 ### 3b. The i2 edition
 
-1. Sign in to GitHub.
-2. Open the repo's **[Actions tab](https://github.com/i2interactive/tracker-i2-edition/actions/workflows/build.yml)**.
-3. Click the newest run with a **green check mark**.
-4. Scroll down to **Artifacts** and click **polyend-tracker-ce-firmware**. A zip file downloads.
-5. Unzip it. Inside are three files. Yours is the one starting with **`PolyendTracker_i2_`**, for example `PolyendTracker_i2_9267e94.ptf`. Ignore the `TrackerPlus_` and `TrackerMini_` files.
-6. Copy that file to the card's `Firmware` folder.
+1. Open the **[Releases page](https://github.com/i2interactive/tracker-i2-edition/releases)**. No GitHub account needed.
+2. Under the newest release, click **`PolyendTracker_i2_<version>.ptf`** (for example `PolyendTracker_i2_v0.4.0b1.ptf`) to download it. Releases marked **Pre-release** haven't been tested on hardware yet.
+3. Test builds of every change are also on the [Actions tab](https://github.com/i2interactive/tracker-i2-edition/actions/workflows/build.yml) (sign in, open a run with a green check, download the **polyend-tracker-ce-firmware** artifact and use the `PolyendTracker_i2_` file). Use those only if asked to test something.
+4. Copy that file to the card's `Firmware` folder.
 
 > **Don't rename the file.** The Tracker only lists files whose names start with `PolyendTrac`, end in `.ptf`, and are **31 characters or shorter**.
 
