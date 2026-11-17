@@ -415,8 +415,13 @@ bool toButton(uint8_t b, Button& out)
         case interfaceButtonRec: out = Button::Rec; return true;
         case interfaceButtonNote: out = Button::Deck0; return true;  // CUT
         case interfaceButtonInstr: out = Button::Deck1; return true; // GRADE
-        case interfaceButtonFx1: out = Button::Deck2; return true;   // HUB
-        case interfaceButtonFx2: out = Button::Deck3; return true;   // STATIC
+        // Polyend's interfaceButtonFx1/Fx2 names are crossed against the
+        // printed labels on the hardware: the key printed FX1 reports
+        // interfaceButtonFx2 (interfaceButton20, Polyend's old "Vol") and the
+        // key printed FX2 reports interfaceButtonFx1 (interfaceButton21). Map
+        // by the printed label so FX1 opens HUB and FX2 opens STATIC.
+        case interfaceButtonFx2: out = Button::Deck2; return true;   // printed FX1 -> HUB
+        case interfaceButtonFx1: out = Button::Deck3; return true;   // printed FX2 -> STATIC
         case interfaceButtonMaster: out = Button::Deck4; return true; // MIXER
         case interfaceButtonFile: out = Button::Deck5; return true;   // FILE
         case interfaceButtonConfig: out = Button::Deck6; return true; // SETUP
