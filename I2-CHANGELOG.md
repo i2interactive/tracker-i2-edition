@@ -7,6 +7,7 @@ Polyend's own changes stay in `CHANGELOG.md`; this file only lists the i2 editio
 - FILE and SETUP decks on FILE and CONFIG.
 - Boot splash on the original Tracker.
 - HUB deck labels match the Creative Hub 1.22 MIDI map.
+- Fix: FX1 opens HUB and FX2 opens STATIC, as printed on the Tracker (they were swapped).
 
 ## 0.3
 - GRADE: Premiere Color Mode side, with a Resolve / Premiere switch.
