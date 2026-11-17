@@ -2,7 +2,7 @@
 
 Polyend's own changes stay in `CHANGELOG.md`; this file only lists the i2 edition.
 
-## 0.4 (not yet tested on hardware)
+## 0.4.0 (released Nov 17, 2026; runs on Ian's Tracker)
 - MIXER deck on MASTER: a Mackie Control surface for the Premiere and Resolve mixers.
 - FILE and SETUP decks on FILE and CONFIG.
 - Boot splash on the original Tracker.

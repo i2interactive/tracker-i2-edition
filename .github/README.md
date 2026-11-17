@@ -6,7 +6,7 @@ It adds **i2 DECK**: a new full-screen interface that turns the Tracker into a c
 
 ![i2 DECK home screen](img/01_home.png)
 
-> **Status: v0.4, not yet tested on hardware.** v0.2 runs on Ian's Tracker, and its USB keys reach Windows over a data-rated USB-C cable. v0.3 added the Premiere Color Mode side of GRADE, STATIC's glitch section and the lock. v0.4 adds three decks on the MASTER, FILE and CONFIG buttons: **MIXER** (a Mackie Control surface for the Premiere and Resolve mixers), **FILE** and **SETUP**. It builds for all three Trackers, and every screen below is rendered from the real firmware code on a PC. i2 DECK only appears on the original Tracker (2020). See the [test checklist](#hardware-test-checklist).
+> **Status: v0.4.0 released (Nov 17, 2026).** It runs on Ian's Tracker, and its USB keys reach Windows over a data-rated USB-C cable. v0.3 added the Premiere Color Mode side of GRADE, STATIC's glitch section and the lock. v0.4 adds three decks on the MASTER, FILE and CONFIG buttons: **MIXER** (a Mackie Control surface for the Premiere and Resolve mixers), **FILE** and **SETUP**. It builds for all three Trackers, and every screen below is rendered from the real firmware code on a PC. i2 DECK only appears on the original Tracker (2020). See the [test checklist](#hardware-test-checklist).
 >
 > **Use a data-rated USB-C cable.** A charge-only cable powers the Tracker, but the deck shows **NO USB** and the computer sees nothing.
 
