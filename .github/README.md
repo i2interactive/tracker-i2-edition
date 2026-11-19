@@ -6,7 +6,7 @@ It adds **i2 DECK**: a new full-screen interface that turns the Tracker into a c
 
 ![i2 DECK home screen](img/01_home.png)
 
-> **Status: v0.4.0 released (Nov 17, 2026).** It runs on Ian's Tracker, and its USB keys reach Windows over a data-rated USB-C cable. v0.3 added the Premiere Color Mode side of GRADE, STATIC's glitch section and the lock. v0.4 adds three decks on the MASTER, FILE and CONFIG buttons: **MIXER** (a Mackie Control surface for the Premiere and Resolve mixers), **FILE** and **SETUP**. It builds for all three Trackers, and every screen below is rendered from the real firmware code on a PC. i2 DECK only appears on the original Tracker (2020). See the [test checklist](#hardware-test-checklist).
+> **Status: v0.4.1 released (Nov 18, 2026).** v0.4.1 adds **i2 GRADE WHEELS** (Lift / Gamma / Gain / Offset, Contrast and Sat in Resolve from the jog wheel, through a small helper app; see [GRADE](#grade-davinci-resolve-or-premiere-color-mode)) and fixes GRADE's printer lights on Windows. v0.4.0 runs on Ian's Tracker, and its USB keys reach Windows over a data-rated USB-C cable. v0.3 added the Premiere Color Mode side of GRADE, STATIC's glitch section and the lock. v0.4 adds three decks on the MASTER, FILE and CONFIG buttons: **MIXER** (a Mackie Control surface for the Premiere and Resolve mixers), **FILE** and **SETUP**. It builds for all three Trackers, and every screen below is rendered from the real firmware code on a PC. i2 DECK only appears on the original Tracker (2020). See the [test checklist](#hardware-test-checklist).
 >
 > **Use a data-rated USB-C cable.** A charge-only cable powers the Tracker, but the deck shows **NO USB** and the computer sees nothing.
 
@@ -98,7 +98,9 @@ Uses Premiere's **default shortcuts**, so nothing is imported into Premiere. Two
 
 GRADE is one deck with two apps. **Screen button 6** switches between **RESOLVE** and **PREMIERE**; the lit half of the switch shows which one is live, and the choice is kept in `settings.txt` (`grade=resolve` or `grade=premiere`). Each side has its own key map and wheel jobs, and Mac/Win works on both.
 
-**RESOLVE** uses the colour page's **default shortcuts**: add serial/parallel/layer/outside nodes, add windows, step through nodes, bypass, resets, grab still, wipe, split screen, versions, memories, and copy the grade from one or two clips back. **The wheel grades.** Press **LITE** once to switch on Resolve's printer lights, then pick MASTER, RED, GREEN or BLUE on the dial strip and turn. Each click is one printer point. Resolve has no shortcuts for the colour wheels themselves, so lift/gamma/gain stay on the mouse.
+**RESOLVE** uses the colour page's **default shortcuts**: add serial/parallel/layer/outside nodes, add windows, step through nodes, bypass, resets, grab still, wipe, split screen, versions, memories, and copy the grade from one or two clips back. **The wheel trims Offset** through Resolve's printer lights: press **LITE** (Color > Printer Light Hotkeys; Resolve switches them off again after a restart or a project change), then pick OFS ALL, OFS RED, OFS GRN or OFS BLU on the dial strip and turn. Each click is one printer point. The deck flashes PRINTER LIGHTS ON / OFF, and reminds you to press LITE if you turn the wheel while it thinks they're off. On Windows it turns Num Lock on by itself (with Num Lock off, the number pad sends arrows).
+
+**Lift / Gamma / Gain: i2 GRADE WHEELS.** Resolve has no shortcuts and no MIDI for its colour wheels, so this one needs a small helper on the computer: [`tools/i2deck/grade-wheels`](../tools/i2deck/grade-wheels). Its `grade.txt` goes on the SD card and adds a **WHEELS** page to GRADE (screen button 7) that sends MIDI; the helper turns that into mouse drags on Resolve's own controls, after you show it where they are once (LEARN). Pick LIFT, GAMMA, GAIN or OFFSET on the pads; the dials drive that wheel's master, its colour balance (X and Y), Contrast and Sat. Works in Resolve and Resolve Studio, on Mac and Windows. Setup: the folder's README.
 
 ![GRADE deck, Premiere side](img/06b_grade_premiere.png)
 
@@ -277,7 +279,7 @@ sh tools/i2deck/host/run.sh        # needs g++, Python 3 and Pillow; output in t
 ## Roadmap
 
 - **Creative Hub:** the Hub listens to the HUB deck since Creative Hub 1.22.0; next, send state back to the Tracker's screen and pads
-- **GRADE:** fill in Premiere Color Mode's real latch keys once checked; a small helper for true lift/gamma/gain control
+- **GRADE:** fill in Premiere Color Mode's real latch keys once checked; tune i2 GRADE WHEELS on real grades
 - **MIXER / FILE / SETUP:** fill in the real Resolve and Premiere keys once checked; trim MIXER to what each host really answers
 - **STATIC:** record the glitched output straight into a sample; per-effect presets
 - **Decks:** pad + wheel combos, more decks, a deck picker for user files

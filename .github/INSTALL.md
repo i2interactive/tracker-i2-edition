@@ -4,7 +4,7 @@ A start-to-finish guide: from a stock Tracker to i2 DECK. Plan on 20–30 minute
 
 > **Which Tracker?** This firmware is for the **original Polyend Tracker** (the 2020 desktop model). Builds for Tracker+ and Tracker Mini exist, but i2 DECK only appears on the original.
 
-> **v0.4.0 runs on a real Tracker** (released Nov 17, 2026). It's still unofficial firmware: do Part 2 (backup) and Part 3a (official firmware on the card) before anything else.
+> **v0.4.0 runs on a real Tracker** (released Nov 17, 2026); v0.4.1 (Nov 18) adds i2 GRADE WHEELS and the Windows printer-lights fix. It's still unofficial firmware: do Part 2 (backup) and Part 3a (official firmware on the card) before anything else.
 
 > **From v0.3 the Tracker's File and Config screens are locked, and from v0.4 the Config button in i2 DECK opens the SETUP deck.** Firmware updates live in Polyend's Config, so the way there is: **unlock** (hold Shift + Rec for 2 seconds in i2 DECK), press **PATTERN**, **then Config**. See [Unlocking](#unlocking-file-config-and-firmware-update).
 
