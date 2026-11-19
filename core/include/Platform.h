@@ -74,6 +74,9 @@ class UsbKeyboard
     virtual void press(uint8_t keycode, uint8_t modifiers) = 0;
     virtual void release(uint8_t keycode) = 0;
     virtual void releaseAll() = 0;
+    // The host's keyboard LEDs (bit 0 = Num Lock, 1 = Caps Lock), or -1
+    // until the host has sent them. macOS usually never does.
+    virtual int leds() { return -1; }
 };
 
 class CrcCalculator

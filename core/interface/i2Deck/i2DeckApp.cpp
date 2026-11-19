@@ -694,8 +694,42 @@ void DeckApp::flashLocked()
 void DeckApp::tap(i2ctl::KeyCombo c)
 {
     if (!io || c.isEmpty()) return;
-    io->keyDown(c.key, c.mods);
+    keyDown(c);
     io->keyUp(c.key);
+}
+
+void DeckApp::keyDown(i2ctl::KeyCombo c)
+{
+    numLockFor(c.key);
+    io->keyDown(c.key, c.mods);
+}
+
+// Windows reads the number pad as arrows and Home / End while Num Lock is
+// off, so Resolve's printer lights (KP4-KP9, KP+, KP Enter) moved the
+// playhead instead. Before a number pad key, turn Num Lock on. Only when
+// the host has told us its LEDs; macOS doesn't use Num Lock.
+void DeckApp::numLockFor(uint8_t key)
+{
+    if (mac || !io || key < 0x54 || key > 0x63) return;
+    // the host answers a Num Lock press with new LEDs; give it a moment
+    if (numLockSent && (int32_t)(nowMs - numLockAt) < 1000) return;
+    int ledBits = io->keyLeds();
+    numLockSent = false;
+    if (ledBits < 0 || (ledBits & 1)) return;
+    io->keyDown(0x53, 0);
+    io->keyUp(0x53);
+    numLockSent = true;
+    numLockAt = nowMs;
+}
+
+bool DeckApp::pageHasPad(const char* mn) const
+{
+    if (home) return false;
+    for (uint8_t i = 0; i < kPads; i++)
+    {
+        if (strcmp(page().pads[i].mn, mn) == 0) return true;
+    }
+    return false;
 }
 
 //==============================================================================================================
@@ -945,7 +979,7 @@ void DeckApp::pad(uint8_t padIndex, bool down)
         {
             // a keyboard shortcut (KEYS decks, and the key pads in MIXER)
             if (shift) c.mods |= i2ctl::kModShift;
-            io->keyDown(c.key, c.mods);
+            keyDown(c);
             heldKey[padIndex] = c.key;
             keyHeld |= 1ULL << padIndex;
         }
@@ -954,6 +988,12 @@ void DeckApp::pad(uint8_t padIndex, bool down)
             io->midiNote(padIndex, true, (uint8_t)(pageIndex + 1));
         }
         note(d.label[0] ? d.label : d.mn);
+        if (strcmp(d.mn, "LITE") == 0)
+        {
+            // Resolve's Printer Light Hotkeys is a toggle
+            lightsOn = !lightsOn;
+            flash(lightsOn ? "PRINTER LIGHTS ON" : "PRINTER LIGHTS OFF");
+        }
         sv->padLight(padIndex, 2);
         dirtyMask |= 1u << blockLayer;
     }
@@ -1172,6 +1212,13 @@ void DeckApp::jog(int16_t steps)
     {
         i2ctl::KeyCombo c = mac ? (cw ? d.cwMac : d.ccwMac) : (cw ? d.cwWin : d.ccwWin);
         if (shift) c.mods |= i2ctl::kModShift;
+        // printer lights do nothing until LITE is on: say so (keys still go)
+        if (!lightsOn && c.key >= 0x54 && c.key <= 0x63 && pageHasPad("LITE") &&
+            (liteHintAt == 0 || (int32_t)(nowMs - liteHintAt) > 4000))
+        {
+            flash("LIGHTS OFF? PRESS LITE");
+            liteHintAt = nowMs ? nowMs : 1;
+        }
         for (int i = 0; i < n; i++) tap(c);
     }
     else if (deck().link == kLinkMidi)

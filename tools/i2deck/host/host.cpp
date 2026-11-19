@@ -226,6 +226,8 @@ class HostIo : public DeckIo
         log += "\n";
     }
     bool keysConnected() override { return connected; }
+    int ledBits = -1; // what the host has told the keyboard (-1 = nothing yet)
+    int keyLeds() override { return ledBits; }
     void keyDown(uint8_t key, uint8_t mods) override
     {
         down[key]++;
@@ -711,6 +713,7 @@ int main(int argc, char** argv)
             while (!io.rds.empty() && (io.rds.back() == '\n' || io.rds.back() == '\r')) io.rds.pop_back();
         }
         else if (!strcmp(cmd, "usb") && sscanf(line, "%*s %d", &a) == 1) io.connected = a != 0;
+        else if (!strcmp(cmd, "leds") && sscanf(line, "%*s %d", &a) == 1) io.ledBits = a; // -1 = host never said
         else if (!strcmp(cmd, "allpads"))
         {
             for (int p = 0; p < 48; p++)

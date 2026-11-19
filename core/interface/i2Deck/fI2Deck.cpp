@@ -169,6 +169,11 @@ class TrackerIo final : public i2deck::DeckIo
     {
         if (UsbKeyboard* kb = keyboard()) kb->releaseAll();
     }
+    virtual int keyLeds() override
+    {
+        UsbKeyboard* kb = keyboard();
+        return kb != nullptr ? kb->leds() : -1;
+    }
 
     virtual void midiNote(uint8_t note, bool on, uint8_t channel) override
     {

@@ -150,11 +150,17 @@ DIAL 6 VOLUME  | ] | [
 )DECK";
 
 const char kGrade[] = R"DECK(# i2 DECK - GRADE: DaVinci Resolve colour page, default keyboard shortcuts.
-# The wheel trims colour through Resolve's printer lights: press LITE once
-# to switch them on, then pick MASTER / RED / GREEN / BLUE and turn.
+# Resolve has no shortcuts or MIDI for Lift / Gamma / Gain, so the wheel
+# trims OFFSET through Resolve's printer lights (the number pad keys).
+# 1. Press LITE (Color > Printer Light Hotkeys). Resolve turns them off
+#    again when it restarts or you change project, so press LITE again then.
+# 2. Pick OFS ALL / OFS RED / OFS GRN / OFS BLU and turn. The Offset wheel
+#    and the printer lights readout move.
+# On Windows the deck turns Num Lock on by itself (with Num Lock off the
+# number pad sends arrows and Home/End instead).
 # Screen button 6 switches GRADE to Premiere (that side is gradepr.txt).
 DECK GRADE
-REV 3
+REV 4
 APP DaVinci Resolve
 LINK KEYS
 COLOR FFB454
@@ -211,10 +217,10 @@ K CLP- PREV CLP | UP
 K CLP+ NEXT CLP | DOWN
 K REV  REVERSE  | J
 K FWD  FORWARD  | L
-DIAL 1 MASTER  | KPPLUS | KPENTER
-DIAL 2 RED     | KP7 | KP4
-DIAL 3 GREEN   | KP8 | KP5
-DIAL 4 BLUE    | KP9 | KP6
+DIAL 1 OFS ALL | KPPLUS | KPENTER
+DIAL 2 OFS RED | KP7 | KP4
+DIAL 3 OFS GRN | KP8 | KP5
+DIAL 4 OFS BLU | KP9 | KP6
 DIAL 5 CLIPS   | DOWN | UP
 DIAL 7 NODES   | SHIFT+OPT+' | SHIFT+OPT+;
 )DECK";

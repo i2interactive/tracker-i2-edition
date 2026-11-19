@@ -151,6 +151,8 @@ class DeckIo
     virtual void keyDown(uint8_t key, uint8_t mods) = 0;
     virtual void keyUp(uint8_t key) = 0;
     virtual void keysOff() = 0;
+    // The host's keyboard LEDs (bit 0 = Num Lock), or -1 if not known.
+    virtual int keyLeds() { return -1; }
     virtual void midiNote(uint8_t note, bool on, uint8_t channel) = 0;
     virtual void midiCc(uint8_t cc, uint8_t value, uint8_t channel) = 0;
     // Any channel message (status byte with channel), and a whole sysex
@@ -252,6 +254,9 @@ class DeckApp final : public i2arc::Game
     const Page& page() const { return deck().pages[pageIndex]; }
     Deck& deck() const { return *deckPtr; }
     void tap(i2ctl::KeyCombo c);
+    void keyDown(i2ctl::KeyCombo c);
+    void numLockFor(uint8_t key);
+    bool pageHasPad(const char* mn) const;
 
     void drawBg(Gfx& g);
     void drawChrome(Gfx& g);
@@ -282,6 +287,12 @@ class DeckApp final : public i2arc::Game
     uint32_t nowMs = 0;
     char flashText[32] = "";
     uint32_t flashUntil = 0;
+    // GRADE (Resolve): Resolve's Printer Light Hotkeys as far as the deck
+    // knows (LITE flips it; kept while the Tracker is on), and Num Lock.
+    bool lightsOn = false;
+    uint32_t liteHintAt = 0;
+    bool numLockSent = false;
+    uint32_t numLockAt = 0;
 
     // settings
     bool bootMusic = false;

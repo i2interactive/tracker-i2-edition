@@ -1,0 +1,71 @@
+# GRADE, Resolve side: printer lights and Num Lock (Windows).
+wait 5
+# home: button 7 = MAC / WIN, so this is Windows
+screen 7
+wait 2
+screen 2
+wait 3
+expectdeck 1
+# the host said Num Lock is off: the first number pad key turns it on
+leds 0
+screen 2
+mark
+jog 1
+expectsent key down 53
+expectsent key down 5f
+wait 2
+shot g1_win_lights_hint
+# the host hasn't answered yet: no second Num Lock press
+mark
+jog 1
+expectnotsent key down 53
+expectsent key down 5f
+# now Num Lock is on: nothing extra
+leds 1
+wait 70
+mark
+jogfor -1 3
+expectnotsent key down 53
+expectsent key down 5c
+# Num Lock turned off again later (by the user): on again
+leds 0
+mark
+jog 1
+expectsent key down 53
+# keys that aren't on the number pad never touch Num Lock
+leds 0
+wait 70
+screen 5
+mark
+jog 1
+expectnotsent key down 53
+expectsent key down 51
+# LITE flips the deck's idea of the printer lights
+pad 32
+wait 2
+shot g2_lights_on
+screen 1
+wait 200
+mark
+jog 1
+expectsent key down 57
+shot g3_master_lights_on
+# unknown LEDs (host never said): leave Num Lock alone
+leds -1
+wait 70
+mark
+jog 1
+expectnotsent key down 53
+# Mac: never Num Lock
+screen 8
+wait 2
+screen 7
+wait 2
+screen 2
+wait 3
+leds 0
+screen 2
+mark
+jog 1
+expectnotsent key down 53
+expectsent key down 5f

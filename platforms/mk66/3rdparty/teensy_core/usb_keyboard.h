@@ -59,6 +59,7 @@ extern uint8_t keyboard_protocol;
 extern uint8_t keyboard_idle_config;
 extern uint8_t keyboard_idle_count;
 extern volatile uint8_t keyboard_leds;
+extern volatile uint8_t keyboard_leds_seen;
 #ifdef __cplusplus
 }
 #endif

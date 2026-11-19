@@ -79,3 +79,12 @@ void UsbKeyboardImpl::sendReport()
     }
 #endif
 }
+
+int UsbKeyboardImpl::leds()
+{
+#ifdef KEYBOARD_INTERFACE
+    return keyboard_leds_seen ? (int)keyboard_leds : -1;
+#else
+    return -1;
+#endif
+}

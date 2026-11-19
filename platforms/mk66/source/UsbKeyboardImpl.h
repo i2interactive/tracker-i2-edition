@@ -13,6 +13,7 @@ class UsbKeyboardImpl final : public UsbKeyboard
     virtual void press(uint8_t keycode, uint8_t modifiers) override;
     virtual void release(uint8_t keycode) override;
     virtual void releaseAll() override;
+    virtual int leds() override;
 
   private:
     static constexpr int kMaxKeys = 6;

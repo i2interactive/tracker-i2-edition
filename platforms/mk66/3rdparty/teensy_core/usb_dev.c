@@ -614,6 +614,7 @@ static void usb_control(uint32_t stat)
 #ifdef KEYBOARD_INTERFACE
 		if (setup.word1 == 0x02000921 && setup.word2 == ((1<<16)|KEYBOARD_INTERFACE)) {
 			keyboard_leds = buf[0];
+			keyboard_leds_seen = 1;
 			endpoint0_transmit(NULL, 0);
 		}
 #endif

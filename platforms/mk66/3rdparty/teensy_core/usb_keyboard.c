@@ -65,6 +65,7 @@ uint8_t keyboard_idle_count=0;
 
 // 1=num lock, 2=caps lock, 4=scroll lock, 8=compose, 16=kana
 volatile uint8_t keyboard_leds=0;
+volatile uint8_t keyboard_leds_seen=0; // i2 edition: set once the host sends its LEDs
 
 
 
