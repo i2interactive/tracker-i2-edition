@@ -1,0 +1,136 @@
+# i2 DECK - GRADE: DaVinci Resolve colour page, with the WHEELS page.
+# This file goes on the Tracker's SD card as i2/Deck/grade.txt (replace the
+# one there). REV 9 keeps the firmware from swapping it for its own.
+#
+# Page 1 COLOR: Resolve's keyboard shortcuts, as before. Printer lights: press
+#   LITE first (Color > Printer Light Hotkeys).
+# Page 2 WHEELS (screen button 7 turns the page): Lift / Gamma / Gain /
+#   Offset, Contrast and Sat. These pads and dials send MIDI on channel 2,
+#   and the i2 GRADE WHEELS helper on the computer turns that into mouse
+#   drags on Resolve's controls. Run the helper and learn the positions once
+#   (see its README).
+# LINK MIDI: pads and dials with a shortcut still send keys; the ones without
+#   send MIDI. The Play / arrow / Copy / Insert buttons don't send keys in a
+#   MIDI deck.
+# Screen button 6 switches GRADE to Premiere (that side is gradepr.txt).
+DECK GRADE
+REV 9
+APP DaVinci Resolve
+LINK MIDI
+COLOR FFB454
+
+PAGE COLOR
+BLOCK 1 NODES
+K SER  SERIAL   | OPT+S
+K PAR  PARALLEL | OPT+P
+K LAYR LAYER    | OPT+L
+K OUTS OUTSIDE  | OPT+O
+K CIRC + CIRCLE | OPT+C
+K LIN  + LINEAR | OPT+Q
+K POLY + POLY   | OPT+G
+K CURV + CURVE  | OPT+B
+K ND-  PREV ND  | SHIFT+OPT+;
+K ND+  NEXT ND  | SHIFT+OPT+'
+K NODE NODE OFF | CMD+D
+K BYP  BYPASS   | SHIFT+D
+K RST  RESET ND | SHIFT+HOME
+K RSTG RESET GR | CMD+SHIFT+HOME
+K RALL RESET ALL| CMD+HOME
+K AUTO AUTO     | OPT+SHIFT+C
+BLOCK 2 COMPARE
+K GRAB GRAB STL | CMD+OPT+G
+K WIPE WIPE     | CMD+W
+K SPLT SPLIT    | CMD+OPT+W
+K HILT HILITE   | SHIFT+H
+K VER+ NEW VER  | CMD+Y
+K VNXT NEXT VER | CMD+N
+K VPRV PREV VER | CMD+B
+K VDEF DEFAULT  | CMD+U
+K =1   GRADE -1 | =
+K =2   GRADE -2 | -
+K COPY COPY     | CMD+C
+K PSTE PASTE    | CMD+V
+K LDA  LOAD A   | CMD+1
+K LDB  LOAD B   | CMD+2
+K SVA  SAVE A   | OPT+1
+K SVB  SAVE B   | OPT+2
+BLOCK 3 LIGHTS + PLAY
+K R+   RED +    | KP7
+K G+   GREEN +  | KP8
+K B+   BLUE +   | KP9
+K M+   MASTER + | KPPLUS
+K R-   RED -    | KP4
+K G-   GREEN -  | KP5
+K B-   BLUE -   | KP6
+K M-   MASTER - | KPENTER
+K LITE LIGHTS   | CMD+OPT+`
+K FULL CINEMA   | P
+K UNDO UNDO     | CMD+Z
+K REDO REDO     | CMD+SHIFT+Z
+K CLP- PREV CLP | UP
+K CLP+ NEXT CLP | DOWN
+K REV  REVERSE  | J
+K FWD  FORWARD  | L
+DIAL 1 CLIPS   | DOWN | UP
+DIAL 2 NODES   | SHIFT+OPT+' | SHIFT+OPT+;
+DIAL 3 OFS RED | KP7 | KP4
+DIAL 4 OFS GRN | KP8 | KP5
+DIAL 5 OFS BLU | KP9 | KP6
+
+PAGE WHEELS
+BLOCK 1 WHEELS
+K LIFT LIFT
+K GAMM GAMMA
+K GAIN GAIN
+K OFST OFFSET
+K LRN  LEARN
+K FINE FINE
+K RSTW RESET WHL
+K BYP  BYPASS   | SHIFT+D
+K ND-  PREV ND  | SHIFT+OPT+;
+K ND+  NEXT ND  | SHIFT+OPT+'
+K CLP- PREV CLP | UP
+K CLP+ NEXT CLP | DOWN
+K UNDO UNDO     | CMD+Z
+K REDO REDO     | CMD+SHIFT+Z
+K RST  RESET ND | SHIFT+HOME
+K NODE NODE OFF | CMD+D
+BLOCK 2 COMPARE
+K GRAB GRAB STL | CMD+OPT+G
+K WIPE WIPE     | CMD+W
+K SPLT SPLIT    | CMD+OPT+W
+K HILT HILITE   | SHIFT+H
+K VER+ NEW VER  | CMD+Y
+K VNXT NEXT VER | CMD+N
+K VPRV PREV VER | CMD+B
+K VDEF DEFAULT  | CMD+U
+K SER  SERIAL   | OPT+S
+K PAR  PARALLEL | OPT+P
+K LAYR LAYER    | OPT+L
+K AUTO AUTO     | OPT+SHIFT+C
+K COPY COPY     | CMD+C
+K PSTE PASTE    | CMD+V
+K =1   GRADE -1 | =
+K =2   GRADE -2 | -
+BLOCK 3 PLAY
+K REV  REVERSE  | J
+K STOP STOP     | K
+K FWD  FORWARD  | L
+K PLAY PLAY     | SPACE
+K FULL CINEMA   | P
+K -
+K -
+K -
+K -
+K -
+K -
+K -
+K -
+K -
+K -
+K -
+DIAL 1 WHEEL
+DIAL 2 BAL X
+DIAL 3 BAL Y
+DIAL 4 CONTRST
+DIAL 5 SAT
