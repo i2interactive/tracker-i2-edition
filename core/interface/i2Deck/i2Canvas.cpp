@@ -209,6 +209,11 @@ void Ft812Gfx::dot(int16_t x, int16_t y, uint8_t size, uint8_t align, const char
     API_CMD_TEXT(x, y, i2dot::kHandle[size], opt, buf);
 }
 
+void Ft812Gfx::origin(int16_t dx)
+{
+    if (spend(4)) API_VERTEX_TRANSLATE_X((uint32_t)((int32_t)dx * 16) & 131071UL);
+}
+
 void Ft812Gfx::clip(int16_t x, int16_t y, int16_t w, int16_t h)
 {
     if (!spend(8)) return;
@@ -245,6 +250,7 @@ cI2Canvas::cI2Canvas(strControlProperties* properties)
     value = properties->value;
     text = properties->text;
     data = (CanvasData*)properties->data;
+    if (data) data->canvas = this;
     style = properties->style;
 }
 

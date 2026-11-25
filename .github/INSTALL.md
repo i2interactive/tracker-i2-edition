@@ -107,7 +107,7 @@ This step confirms your Tracker takes Community Edition before any i2 code is in
    - **Windows:** the first time, if the pads don't type anything, unplug the Tracker and plug it back in once.
 2. On the home screen, press **screen button 7** until the top-right corner shows your computer: **MAC** or **WIN**. It is remembered.
 3. Press **screen button 1** to open **CUT**.
-4. Quick test: open a text editor and press the pad labelled **IN** (second row, far left). It should type `i`.
+4. Quick test: open a text editor and press the pad labelled **Mark In** (second row, far left). It should type `i`.
 5. Open Premiere Pro, **click on the timeline** so it has focus, and press **Play** on the Tracker.
 
 **Finding your way around**
@@ -134,7 +134,7 @@ This step confirms your Tracker takes Community Edition before any i2 code is in
 | Tracker button | Home screen | Deck | For | Notes |
 |---|---|---|---|---|
 | NOTE | page 1, button 1 | CUT | Premiere Pro | Premiere's default shortcuts. Two pages |
-| INSTRUMENT | page 1, button 2 | GRADE | DaVinci Resolve colour page **or** Premiere Color Mode | Button 6 switches. Resolve: press **LITE** once, then the wheel trims MASTER / RED / GREEN / BLUE. Premiere: latch a control, then the wheel nudges it. Some Premiere keys need checking (see below) |
+| INSTRUMENT | page 1, button 2 | GRADE | DaVinci Resolve colour page **or** Premiere Color Mode | Button 6 switches. Resolve: press **Printer Lights** once, then the wheel trims MASTER / RED / GREEN / BLUE. Premiere: latch a control, then the wheel nudges it. Some Premiere keys need checking (see below) |
 | FX1 | page 1, button 3 | HUB | i2 Creative Hub / ComfyUI | Drives the i2 Creative Hub 1.22+ over MIDI: turn on Settings > MIDI controller (i2 DECK) in the Hub |
 | FX2 | page 1, button 4 | STATIC | The built-in FM radio | Plug in headphones (the cable is the antenna); you hear the station. Seek, store stations with Shift + a station pad. Page 2 (GLITCH): hold pads to stutter, crush, tape-stop, scan, filter or freeze the radio |
 | MASTER | page 2, button 1 | MIXER | The Premiere Audio Track Mixer **or** the Resolve Fairlight mixer | A Mackie Control surface over USB MIDI: mute / solo / arm / select for 8 tracks, banks, transport; the wheel moves faders and pan. Set the app up once (below) |

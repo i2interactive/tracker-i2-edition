@@ -1,9 +1,9 @@
 # i2 DECK - GRADE: DaVinci Resolve colour page, with the WHEELS page.
 # This file goes on the Tracker's SD card as i2/Deck/grade.txt (replace the
-# one there). REV 9 keeps the firmware from swapping it for its own.
+# one there). REV 10 keeps the firmware from swapping it for its own.
 #
 # Page 1 COLOR: Resolve's keyboard shortcuts, as before. Printer lights: press
-#   LITE first (Color > Printer Light Hotkeys).
+#   Printer Lights first (Color > Printer Light Hotkeys).
 # Page 2 WHEELS (screen button 7 turns the page): Lift / Gamma / Gain /
 #   Offset, Contrast and Sat. These pads and dials send MIDI on channel 2,
 #   and the i2 GRADE WHEELS helper on the computer turns that into mouse
@@ -14,63 +14,63 @@
 #   MIDI deck.
 # Screen button 6 switches GRADE to Premiere (that side is gradepr.txt).
 DECK GRADE
-REV 9
+REV 10
 APP DaVinci Resolve
 LINK MIDI
 COLOR FFB454
 
 PAGE COLOR
 BLOCK 1 NODES
-K SER  SERIAL   | OPT+S
-K PAR  PARALLEL | OPT+P
-K LAYR LAYER    | OPT+L
-K OUTS OUTSIDE  | OPT+O
-K CIRC + CIRCLE | OPT+C
-K LIN  + LINEAR | OPT+Q
-K POLY + POLY   | OPT+G
-K CURV + CURVE  | OPT+B
-K ND-  PREV ND  | SHIFT+OPT+;
-K ND+  NEXT ND  | SHIFT+OPT+'
-K NODE NODE OFF | CMD+D
-K BYP  BYPASS   | SHIFT+D
-K RST  RESET ND | SHIFT+HOME
-K RSTG RESET GR | CMD+SHIFT+HOME
-K RALL RESET ALL| CMD+HOME
-K AUTO AUTO     | OPT+SHIFT+C
+K SER  Serial Node          | OPT+S
+K PAR  Parallel Node        | OPT+P
+K LAYR Layer Node           | OPT+L
+K OUTS Outside Node         | OPT+O
+K CIRC Circle Window        | OPT+C
+K LIN  Linear Window        | OPT+Q
+K POLY Polygon Window       | OPT+G
+K CURV Curve Window         | OPT+B
+K ND-  Previous Node        | SHIFT+OPT+;
+K ND+  Next Node            | SHIFT+OPT+'
+K NODE Node On / Off        | CMD+D
+K BYP  Bypass Grades        | SHIFT+D
+K RST  Reset Node           | SHIFT+HOME
+K RSTG Reset Grade          | CMD+SHIFT+HOME
+K RALL Reset Grades + Nodes | CMD+HOME
+K AUTO Auto Color           | OPT+SHIFT+C
 BLOCK 2 COMPARE
-K GRAB GRAB STL | CMD+OPT+G
-K WIPE WIPE     | CMD+W
-K SPLT SPLIT    | CMD+OPT+W
-K HILT HILITE   | SHIFT+H
-K VER+ NEW VER  | CMD+Y
-K VNXT NEXT VER | CMD+N
-K VPRV PREV VER | CMD+B
-K VDEF DEFAULT  | CMD+U
-K =1   GRADE -1 | =
-K =2   GRADE -2 | -
-K COPY COPY     | CMD+C
-K PSTE PASTE    | CMD+V
-K LDA  LOAD A   | CMD+1
-K LDB  LOAD B   | CMD+2
-K SVA  SAVE A   | OPT+1
-K SVB  SAVE B   | OPT+2
+K GRAB Grab Still           | CMD+OPT+G
+K WIPE Wipe On / Off        | CMD+W
+K SPLT Split Screen         | CMD+OPT+W
+K HILT Highlight            | SHIFT+H
+K VER+ Add Version          | CMD+Y
+K VNXT Next Version         | CMD+N
+K VPRV Previous Version     | CMD+B
+K VDEF Default Version      | CMD+U
+K =1   Grade from 1 Back    | =
+K =2   Grade from 2 Back    | -
+K COPY Copy Grade           | CMD+C
+K PSTE Paste Grade          | CMD+V
+K LDA  Load Memory A        | CMD+1
+K LDB  Load Memory B        | CMD+2
+K SVA  Save Memory A        | OPT+1
+K SVB  Save Memory B        | OPT+2
 BLOCK 3 LIGHTS + PLAY
-K R+   RED +    | KP7
-K G+   GREEN +  | KP8
-K B+   BLUE +   | KP9
-K M+   MASTER + | KPPLUS
-K R-   RED -    | KP4
-K G-   GREEN -  | KP5
-K B-   BLUE -   | KP6
-K M-   MASTER - | KPENTER
-K LITE LIGHTS   | CMD+OPT+`
-K FULL CINEMA   | P
-K UNDO UNDO     | CMD+Z
-K REDO REDO     | CMD+SHIFT+Z
-K CLP- PREV CLP | UP
-K CLP+ NEXT CLP | DOWN
-K REV  REVERSE  | J
-K FWD  FORWARD  | L
+K R+   Red +                | KP7
+K G+   Green +              | KP8
+K B+   Blue +               | KP9
+K M+   Master +             | KPPLUS
+K R-   Red -                | KP4
+K G-   Green -              | KP5
+K B-   Blue -               | KP6
+K M-   Master -             | KPENTER
+K LITE Printer Lights       | CMD+OPT+`
+K FULL Cinema Viewer        | P
+K UNDO Undo                 | CMD+Z
+K REDO Redo                 | CMD+SHIFT+Z
+K CLP- Previous Clip        | UP
+K CLP+ Next Clip            | DOWN
+K REV  Reverse              | J
+K FWD  Forward              | L
 DIAL 1 CLIPS   | DOWN | UP
 DIAL 2 NODES   | SHIFT+OPT+' | SHIFT+OPT+;
 DIAL 3 OFS RED | KP7 | KP4
@@ -79,45 +79,45 @@ DIAL 5 OFS BLU | KP9 | KP6
 
 PAGE WHEELS
 BLOCK 1 WHEELS
-K LIFT LIFT
-K GAMM GAMMA
-K GAIN GAIN
-K OFST OFFSET
-K LRN  LEARN
-K FINE FINE
-K RSTW RESET WHL
-K BYP  BYPASS   | SHIFT+D
-K ND-  PREV ND  | SHIFT+OPT+;
-K ND+  NEXT ND  | SHIFT+OPT+'
-K CLP- PREV CLP | UP
-K CLP+ NEXT CLP | DOWN
-K UNDO UNDO     | CMD+Z
-K REDO REDO     | CMD+SHIFT+Z
-K RST  RESET ND | SHIFT+HOME
-K NODE NODE OFF | CMD+D
+K LIFT Lift
+K GAMM Gamma
+K GAIN Gain
+K OFST Offset
+K LRN  Learn
+K FINE Fine
+K RSTW Reset Wheel
+K BYP  Bypass Grades        | SHIFT+D
+K ND-  Previous Node        | SHIFT+OPT+;
+K ND+  Next Node            | SHIFT+OPT+'
+K CLP- Previous Clip        | UP
+K CLP+ Next Clip            | DOWN
+K UNDO Undo                 | CMD+Z
+K REDO Redo                 | CMD+SHIFT+Z
+K RST  Reset Node           | SHIFT+HOME
+K NODE Node On / Off        | CMD+D
 BLOCK 2 COMPARE
-K GRAB GRAB STL | CMD+OPT+G
-K WIPE WIPE     | CMD+W
-K SPLT SPLIT    | CMD+OPT+W
-K HILT HILITE   | SHIFT+H
-K VER+ NEW VER  | CMD+Y
-K VNXT NEXT VER | CMD+N
-K VPRV PREV VER | CMD+B
-K VDEF DEFAULT  | CMD+U
-K SER  SERIAL   | OPT+S
-K PAR  PARALLEL | OPT+P
-K LAYR LAYER    | OPT+L
-K AUTO AUTO     | OPT+SHIFT+C
-K COPY COPY     | CMD+C
-K PSTE PASTE    | CMD+V
-K =1   GRADE -1 | =
-K =2   GRADE -2 | -
+K GRAB Grab Still           | CMD+OPT+G
+K WIPE Wipe On / Off        | CMD+W
+K SPLT Split Screen         | CMD+OPT+W
+K HILT Highlight            | SHIFT+H
+K VER+ Add Version          | CMD+Y
+K VNXT Next Version         | CMD+N
+K VPRV Previous Version     | CMD+B
+K VDEF Default Version      | CMD+U
+K SER  Serial Node          | OPT+S
+K PAR  Parallel Node        | OPT+P
+K LAYR Layer Node           | OPT+L
+K AUTO Auto Color           | OPT+SHIFT+C
+K COPY Copy Grade           | CMD+C
+K PSTE Paste Grade          | CMD+V
+K =1   Grade from 1 Back    | =
+K =2   Grade from 2 Back    | -
 BLOCK 3 PLAY
-K REV  REVERSE  | J
-K STOP STOP     | K
-K FWD  FORWARD  | L
-K PLAY PLAY     | SPACE
-K FULL CINEMA   | P
+K REV  Reverse              | J
+K STOP Stop                 | K
+K FWD  Forward              | L
+K PLAY Play                 | SPACE
+K FULL Cinema Viewer        | P
 K -
 K -
 K -

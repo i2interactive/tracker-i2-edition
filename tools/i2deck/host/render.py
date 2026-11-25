@@ -47,10 +47,18 @@ def render(txt_path, png_path):
     labels = {}
     pads = ""
     name = ""
+    ox = 0  # origin(): VERTEX_TRANSLATE_X, reset at each layer
 
     def draw_prim(fn):
         layer = Image.new("RGBA", (W, H), (0, 0, 0, 0))
         fn(ImageDraw.Draw(layer))
+        if ox:
+            shifted = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+            if ox > 0:
+                shifted.alpha_composite(layer.crop((0, 0, W - ox, H)), (ox, 0))
+            else:
+                shifted.alpha_composite(layer.crop((-ox, 0, W, H)), (0, 0))
+            layer = shifted
         if clip:
             x, y, w, h = clip
             mask = Image.new("L", (W, H), 0)
@@ -59,6 +67,8 @@ def render(txt_path, png_path):
         img.alpha_composite(layer, (0, 0))
 
     for raw in Path(txt_path).read_text().splitlines():
+        if raw.startswith("# layer"):
+            ox = 0
         if not raw or raw.startswith("#"):
             continue
         k = raw[0]
@@ -129,6 +139,8 @@ def render(txt_path, png_path):
                                 px, py = x + i * 6 * pitch + cx * pitch, y + cy * pitch
                                 d.rectangle([px, py, px + lit - 1, py + lit - 1], fill=c)
             draw_prim(dots)
+        elif k == "X":
+            ox = int(raw[2:])
         elif k == "S":
             clip = tuple(map(int, raw[2:].split()))
         elif k == "U":

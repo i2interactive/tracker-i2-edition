@@ -75,8 +75,8 @@ constexpr uint8_t kDivisions = 6; // note values 1/2 to 1/64
 
 struct PadDef
 {
-    char mn[5];
-    char label[11];
+    char mn[5];     // short code: what the deck file and actions go by
+    char label[24]; // the name shown on the key, in full (case kept)
     i2ctl::KeyCombo mac, win;
     uint8_t act, arg;
     bool used() const { return mn[0] != 0; }
@@ -116,6 +116,27 @@ struct Deck
 
 // Parses a deck file into `out`. Returns the number of keys accepted.
 int parseDeck(const char* text, size_t length, Deck& out);
+
+// A key's name laid out to fit on its pad.
+struct LabelFit
+{
+    uint8_t font;  // kFont14B or kFont12
+    uint8_t lines; // 1-3
+    uint8_t how;   // kFitBold, kFitSmall, kFitSplit, kFitClipped
+    char line[3][26];
+};
+enum : uint8_t
+{
+    kFitBold,    // whole words, 14 bold, up to 2 lines
+    kFitSmall,   // whole words, 12, up to 3 lines
+    kFitSplit,   // 12, a long word split across lines with a hyphen
+    kFitClipped, // 12, still too long: cut at 3 lines
+};
+constexpr int16_t kPadTextW = 55; // a pad is 59 px wide; 2 px each side
+
+// Lays `label` out in `width` pixels: the biggest of the options above that
+// fits. Uses the font's real widths, so it is exact on the Tracker.
+void fitLabel(Gfx& g, const char* label, int16_t width, LabelFit& out);
 
 struct BuiltinDeck
 {
@@ -196,6 +217,13 @@ class DeckApp final : public i2arc::Game
     virtual void midiIn(uint8_t status, uint8_t d1, uint8_t d2) override;
     virtual void sysexIn(const uint8_t* data, uint16_t length) override;
 
+    // The real size of the frame on the screen, in display-list bytes,
+    // measured by the firmware once every layer is drawn. If it gets close to
+    // the Tracker's limit (it drops what doesn't fit), key blocks fall back
+    // to short codes, the right-hand block first, until the page changes.
+    void frameBytes(uint16_t bytes);
+    uint8_t shortBlocks() const { return shortMask; }
+
     // Start-up settings: boot=music asks to start in the Tracker; lock=off
     // turns the lock off. Defaults: start in i2 DECK, locked.
     static void readBoot(Services& sv, bool& music, bool& lock);
@@ -263,6 +291,7 @@ class DeckApp final : public i2arc::Game
     void drawHome(Gfx& g);
     void drawLive(Gfx& g);
     void drawBlock(Gfx& g, uint8_t block);
+    void drawPadLabel(Gfx& g, const PadDef& d, int16_t x, int16_t y);
     void drawGlitch(Gfx& g);
     void dialValue(uint8_t i, char* out, size_t cap) const;
     void chip(Gfx& g, int16_t rightX, const char* text, bool solid, uint32_t accent, int16_t& outLeft);
@@ -283,7 +312,9 @@ class DeckApp final : public i2arc::Game
     uint64_t keyHeld = 0; // pads holding a key down
     uint8_t heldKey[kPads] = {};
     uint8_t passKey[8] = {};
-    char last[24] = "";
+    char last[48] = ""; // the last pad's name and the shortcut it sent
+    uint16_t measured = 0;  // frameBytes(): the last frame's real size
+    uint8_t shortMask = 0;  // key blocks drawn with short codes (bit = block)
     uint32_t nowMs = 0;
     char flashText[32] = "";
     uint32_t flashUntil = 0;

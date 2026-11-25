@@ -20,7 +20,7 @@ namespace i2splash
 {
 
 // The i2 DECK release this firmware carries.
-constexpr const char* kDeckVersion = "0.4";
+constexpr const char* kDeckVersion = "0.5";
 
 enum Style : uint8_t
 {

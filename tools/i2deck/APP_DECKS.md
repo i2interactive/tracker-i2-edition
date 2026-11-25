@@ -19,7 +19,7 @@ The three decks share one setting, `app=premiere` or `app=resolve` in
 `i2/Deck/settings.txt`, switched with screen button 6 in any of them. GRADE
 keeps its own `grade=` (you might grade in Resolve and cut in Premiere).
 
-Files on the card (written the first time each side opens, `REV 1`):
+Files on the card (written the first time each side opens, `REV 2` since v0.5):
 `mixerpr.txt`, `mixerres.txt`, `filepr.txt`, `fileres.txt`, `setuppr.txt`,
 `setupres.txt`.
 
