@@ -2,6 +2,14 @@
 
 Polyend's own changes stay in `CHANGELOG.md`; this file only lists the i2 edition.
 
+## 0.5.0 (not released yet)
+- Every key shows its full name on the screen (Ripple Delete, Match Frame, Previous Marker) instead of a 4-letter code. Short names are big and bold; longer ones wrap to two or three lines, and a word too long for the pad is split with a hyphen. Names in deck files can be up to 23 characters and keep their case.
+- The live band shows the pressed key's name and the shortcut it sent.
+- All built-in decks are REV +1 (CUT gets REV 1), so the card's files are replaced once and kept as `<name>-old.txt`. `grade-wheels/grade.txt` is REV 10 with the same names: copy it to the card by hand.
+- Hold Shift in a deck to see how full the screen's display memory is. If a frame gets close to the Tracker's limit, key blocks fall back to short codes (right-hand block first) instead of the screen dropping layers.
+- The right-hand key blocks are drawn with a display-chip shift (VERTEX_TRANSLATE_X), which halves what their text costs.
+- Test harness: real Tracker font widths and Liberation Sans rendering; checks that every built-in key name fits.
+
 ## 0.4.1 (released Nov 18, 2026)
 - i2 GRADE WHEELS (`tools/i2deck/grade-wheels`): Lift / Gamma / Gain / Offset, Contrast and Sat in DaVinci Resolve (free and Studio, Mac and Windows) from GRADE's new WHEELS page, through a helper app that drives Resolve's controls with the mouse. The new `grade.txt` goes on the SD card by hand (REV 9).
 - GRADE, Resolve: on Windows the deck turns Num Lock on before number pad keys (the printer lights moved the playhead with Num Lock off).
