@@ -59,11 +59,12 @@ Every deck uses the same layout:
 
 | Part of the screen | What it shows | What you press |
 |---|---|---|
-| **Key map** (bottom half) | The 48 pads as three 4x4 blocks, each key with a short code | The pad in the same position. Lit pads have a job; a held pad lights up on screen and its full name appears in the live band |
+| **Key map** (bottom half) | The 48 pads as three 4x4 blocks, each key with its full name. Short names are big; longer ones wrap to two or three lines, and a word too long for the pad is split with a hyphen | The pad in the same position. Lit pads have a job; a held pad lights up on screen, and its name and the shortcut it sent appear in the live band |
 | **Dial strip** (bottom edge) | Jobs for the jog wheel, PAGE and HOME | Screen buttons pick the wheel's job. **Button 8 is HOME in every deck.** In a deck with pages, button 7 turns the page |
 | **Live band** (top) | The wheel's current job, the name of the last key pressed, and how far each dial has moved | |
 
-- **Shift** adds Shift to any pad or wheel step.
+- **Shift** adds Shift to any pad or wheel step. In a deck, holding Shift also shows how full the screen is in the top bar (`Screen 6200 / 8172 B`).
+- **If the screen runs out of display memory** (a deck file with very long names, say), the right-hand block goes back to short codes, then the middle one, and the deck flashes SCREEN FULL: SHORT NAMES. Turning the page tries full names again.
 - **Play, the arrows, Delete, Copy and Insert** send Space, the arrow keys, Backspace, Copy and Paste in the keyboard decks.
 - **The deck buttons work from the home screen or any deck.** In the normal Tracker every big button works as usual, except File and Config while locked: there they **bring you back to i2 DECK** (see [The lock](#the-lock)).
 - **Mac or Windows:** button 7 on the home screen. It swaps Cmd for Ctrl and Option for Alt, and is remembered.
@@ -98,7 +99,7 @@ Uses Premiere's **default shortcuts**, so nothing is imported into Premiere. Two
 
 GRADE is one deck with two apps. **Screen button 6** switches between **RESOLVE** and **PREMIERE**; the lit half of the switch shows which one is live, and the choice is kept in `settings.txt` (`grade=resolve` or `grade=premiere`). Each side has its own key map and wheel jobs, and Mac/Win works on both.
 
-**RESOLVE** uses the colour page's **default shortcuts**: add serial/parallel/layer/outside nodes, add windows, step through nodes, bypass, resets, grab still, wipe, split screen, versions, memories, and copy the grade from one or two clips back. **The wheel trims Offset** through Resolve's printer lights: press **LITE** (Color > Printer Light Hotkeys; Resolve switches them off again after a restart or a project change), then pick OFS ALL, OFS RED, OFS GRN or OFS BLU on the dial strip and turn. Each click is one printer point. The deck flashes PRINTER LIGHTS ON / OFF, and reminds you to press LITE if you turn the wheel while it thinks they're off. On Windows it turns Num Lock on by itself (with Num Lock off, the number pad sends arrows).
+**RESOLVE** uses the colour page's **default shortcuts**: add serial/parallel/layer/outside nodes, add windows, step through nodes, bypass, resets, grab still, wipe, split screen, versions, memories, and copy the grade from one or two clips back. **The wheel trims Offset** through Resolve's printer lights: press **Printer Lights** (LITE in the deck file; Color > Printer Light Hotkeys; Resolve switches them off again after a restart or a project change), then pick OFS ALL, OFS RED, OFS GRN or OFS BLU on the dial strip and turn. Each click is one printer point. The deck flashes PRINTER LIGHTS ON / OFF, and reminds you to press it if you turn the wheel while it thinks they're off. On Windows it turns Num Lock on by itself (with Num Lock off, the number pad sends arrows).
 
 **Lift / Gamma / Gain: i2 GRADE WHEELS.** Resolve has no shortcuts and no MIDI for its colour wheels, so this one needs a small helper on the computer: [`tools/i2deck/grade-wheels`](../tools/i2deck/grade-wheels). Its `grade.txt` goes on the SD card and adds a **WHEELS** page to GRADE (screen button 7) that sends MIDI; the helper turns that into mouse drags on Resolve's own controls, after you show it where they are once (LEARN). Pick LIFT, GAMMA, GAIN or OFFSET on the pads; the dials drive that wheel's master, its colour balance (X and Y), Contrast and Sat. Works in Resolve and Resolve Studio, on Mac and Windows. Setup: the folder's README.
 
@@ -204,15 +205,15 @@ LINK KEYS                      (KEYS, MIDI, RADIO or MCU)
 COLOR 7FB2FF
 PAGE EDIT
 BLOCK 1 PLAY + MARK            (blocks 1-3, left to right)
-K REV  REVERSE  | J            (next pad in the block: code, name | shortcut)
-K CLR  CLEAR IO | OPT+X | CTRL+SHIFT+X     (optional separate Windows shortcut)
+K REV  Reverse | J             (next pad in the block: code, name | shortcut)
+K CLR  Clear In/Out | OPT+X | CTRL+SHIFT+X (optional separate Windows shortcut)
 K -                            (leave a pad empty)
 DIAL 1 FRAME | RIGHT | LEFT    (wheel job: name | clockwise | anticlockwise)
 ```
 
-- Up to 4 pages, 16 keys per block, 7 dials per page (6 in a deck with more than one page, where button 7 turns the page; in GRADE, MIXER, FILE and SETUP, button 6 is the app switch). Codes are up to 4 characters, names up to 10.
+- Up to 4 pages, 16 keys per block, 7 dials per page (6 in a deck with more than one page, where button 7 turns the page; in GRADE, MIXER, FILE and SETUP, button 6 is the app switch). Codes are up to 4 characters, names up to 23. The name is what the key shows, written the way you want it shown: mixed case fits best (about 8 letters a line, 3 lines). The code is shown only for a key with no name.
 - GRADE has two files: `grade.txt` (Resolve) and `gradepr.txt` (Premiere).
-- **REV:** the built-in decks carry a version. When new firmware brings a newer GRADE or STATIC deck, the old file on the card is kept as `<name>-old.txt` (for example `static-old.txt`) and replaced, and the deck flashes a note. Copy your edits across from the old file. v0.3 does this once for `grade.txt` and `static.txt`.
+- **REV:** the built-in decks carry a version. When new firmware brings a newer GRADE or STATIC deck, the old file on the card is kept as `<name>-old.txt` (for example `static-old.txt`) and replaced, and the deck flashes a note. Copy your edits across from the old file. v0.3 does this once for `grade.txt` and `static.txt`; v0.5 does it once for every deck, to bring in the full key names (the GRADE file with the WHEELS page is the exception: copy the new `tools/i2deck/grade-wheels/grade.txt` to the card by hand).
 - **MIXER actions** (`LINK MCU`; pads with a shortcut still send keys): strip buttons `@REC1`-`@REC8 @SOLO1`-`8 @MUTE1`-`8 @SEL1`-`8`, `@BANK- @BANK+ @CH- @CH+ @FLIP @REW @FF @STOP @PLAY @RECORD @CYCLE @MARKER @UNDO @SAVE @NUDGE @READ @WRITE @TOUCH @LATCH`, any Mackie note as `@N<0-127>`, and the dial jobs `@FADER @MASTER @PAN @STRIP @JOG`.
 - **STATIC actions** (instead of a shortcut): `@SEEK+ @SEEK- @STEP+ @STEP- @P1`-`@P8 @SEND @RECORDER @MON`, the glitches `@STUTTER @CRUSH @STOP @SCAN @FILTER @FREEZE @RSSI @KILL`, beat repeats `@R2 @R4 @R8 @R16 @R32 @R64`, and the dial jobs `@TUNE @AMOUNT @LENGTH @VOLUME`.
 - **Modifiers:** `CMD` (Cmd on Mac, Ctrl on Windows), `CTRL`, `SHIFT`, `OPT` or `ALT`, `WIN`.
@@ -235,6 +236,13 @@ p1=885 ... p8=1079   station presets
 ```
 
 ### Hardware test checklist
+
+v0.5 (full key names):
+1. **Names.** Open each deck and page. Every key shows its full name, nothing runs off a pad or overlaps the next one, and the names sit in the middle of their pads. Short names (Undo, Stop) are big and bold; longer ones are smaller.
+2. **Right-hand block.** The right-hand block (MOVE + VIEW in CUT) is in the right place, not drawn over the left-hand block. It's drawn with a display-chip shift, new in v0.5.
+3. **Screen memory.** Hold Shift in CUT page 1 and in GRADE (Resolve): note the `Screen ... / 8172 B` number in the top bar for each. Expected around 5000-6500. If SCREEN FULL: SHORT NAMES flashes on a built-in deck, note which deck and page.
+4. **Live band.** Press a pad: the live band shows its name and the shortcut, e.g. `Key: Ripple Delete   Opt+Delete`.
+5. **Deck files.** The first time each deck opens it flashes NEW DECK: OLD ONE SAVED AS -OLD, and `<name>-old.txt` appears on the card. For GRADE with the WHEELS page, copy the new `grade.txt` from `tools/i2deck/grade-wheels/` to the card first (REV 10).
 
 v0.2 (passed on Ian's Tracker, Nov 14): boots to i2 DECK, USB keys reach Windows over a data-rated cable.
 
@@ -270,7 +278,7 @@ v0.3:
 
 ### Testing on a computer
 
-`tools/i2deck/host/` runs the firmware's own interface code on a PC with scripted input. It renders the screens (and the boot splash, `00*_boot_*.png`) to PNG, logs every key, note and radio command, fails if a key is left held, and checks each layer and the whole frame against the display chip's limits.
+`tools/i2deck/host/` runs the firmware's own interface code on a PC with scripted input. It renders the screens (and the boot splash, `00*_boot_*.png`) to PNG, logs every key, note and radio command, fails if a key is left held, checks that every key name fits its pad, and checks each layer and the whole frame against the display chip's limits. Text is measured with the firmware's own font tables (Liberation Sans) and drawn with the Liberation Sans TTF (`fonts-liberation`).
 
 ```sh
 sh tools/i2deck/host/run.sh        # needs g++, Python 3 and Pillow; output in tools/i2deck/host/out/
