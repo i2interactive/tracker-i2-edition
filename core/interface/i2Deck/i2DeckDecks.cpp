@@ -18,7 +18,13 @@
 //   BLOCK <1-3> <title>    starts one of the three 4x4 pad blocks
 //   K <code> <label> | <combo> [| <Windows combo>]
 //                          the next pad in the block, left to right, top
-//                          row first. "K -" leaves a pad empty.
+//                          row first. "K -" leaves a pad empty. The label
+//                          (up to 23 letters, written as you want it shown)
+//                          is the name on the key, in full: it wraps to two
+//                          or three lines, and a word too long for the pad
+//                          is split with a hyphen. Mixed case fits best.
+//                          The code (up to 4 letters) is shown only when
+//                          there is no label.
 //                          CMD = Cmd on Mac / Ctrl on Windows. OPT = Option / Alt.
 //   DIAL <1-7> <name> | <clockwise combo> | <anticlockwise combo>
 //                          a job for the jog wheel (screen buttons 1-7 pick it).
@@ -34,62 +40,63 @@ namespace
 {
 const char kCut[] = R"DECK(# i2 DECK - CUT: Adobe Premiere Pro, default keyboard shortcuts
 DECK CUT
+REV 1
 APP Premiere Pro
 LINK KEYS
 COLOR 7FB2FF
 
 PAGE EDIT
 BLOCK 1 PLAY + MARK
-K REV  REVERSE  | J
-K STOP STOP     | K
-K FWD  FORWARD  | L
-K LOOP AROUND   | SHIFT+K
-K IN   MARK IN  | I
-K OUT  MARK OUT | O
-K CLIP MARK CLIP| X
-K CLR  CLEAR IO | OPT+X | CTRL+SHIFT+X
-K GOIN TO IN    | SHIFT+I
-K GOUT TO OUT   | SHIFT+O
-K MTCH MATCH FR | F
-K MARK MARKER   | M
-K UNDO UNDO     | CMD+Z
-K REDO REDO     | CMD+SHIFT+Z
-K SNAP SNAP     | S
-K SAVE SAVE     | CMD+S
+K REV  Reverse      | J
+K STOP Stop         | K
+K FWD  Forward      | L
+K LOOP Play Around  | SHIFT+K
+K IN   Mark In      | I
+K OUT  Mark Out     | O
+K CLIP Mark Clip    | X
+K CLR  Clear In/Out | OPT+X | CTRL+SHIFT+X
+K GOIN Go to In     | SHIFT+I
+K GOUT Go to Out    | SHIFT+O
+K MTCH Match Frame  | F
+K MARK Add Marker   | M
+K UNDO Undo         | CMD+Z
+K REDO Redo         | CMD+SHIFT+Z
+K SNAP Snap         | S
+K SAVE Save         | CMD+S
 BLOCK 2 CUT + TRIM
-K CUT  ADD EDIT | CMD+K
-K CUTA ALL TRKS | CMD+SHIFT+K
-K RDEL RIPPLE   | OPT+BKSP | SHIFT+DEL
-K LIFT LIFT     | ;
-K EXTR EXTRACT  | '
-K INS  INSERT   | ,
-K OVR  OVERWRT  | .
-K EXT  EXTEND   | E
-K Q    TRIM PRV | Q
-K W    TRIM NXT | W
-K NUD- NUDGE L  | OPT+LEFT
-K NUD+ NUDGE R  | OPT+RIGHT
-K SEL  SELECT   | V
-K RAZR RAZOR    | C
-K RPL  RIPPLE T | B
-K SLIP SLIP     | Y
+K CUT  Add Edit             | CMD+K
+K CUTA Add Edit All Tracks  | CMD+SHIFT+K
+K RDEL Ripple Delete        | OPT+BKSP | SHIFT+DEL
+K LIFT Lift                 | ;
+K EXTR Extract              | '
+K INS  Insert               | ,
+K OVR  Overwrite            | .
+K EXT  Extend Edit          | E
+K Q    Ripple Trim Previous | Q
+K W    Ripple Trim Next     | W
+K NUD- Nudge Left           | OPT+LEFT
+K NUD+ Nudge Right          | OPT+RIGHT
+K SEL  Selection Tool       | V
+K RAZR Razor Tool           | C
+K RPL  Ripple Edit Tool     | B
+K SLIP Slip Tool            | Y
 BLOCK 3 MOVE + VIEW
-K TOP  START    | HOME
-K END  END      | END
-K PRV  PREV CUT | UP
-K NXT  NEXT CUT | DOWN
-K -5   BACK 5   | SHIFT+LEFT
-K +5   FWD 5    | SHIFT+RIGHT
-K MK-  PREV MRK | CMD+SHIFT+M
-K MK+  NEXT MRK | SHIFT+M
-K FIT  ZOOM FIT | BACKSLASH
-K MAX  MAXIMIZE | SHIFT+`
-K FULL FULLSCRN | CTRL+`
-K REND RENDER   | ENTER
-K Z+   ZOOM IN  | =
-K Z-   ZOOM OUT | -
-K TRK+ TALLER   | CMD+=
-K TRK- SHORTER  | CMD+-
+K TOP  Go to Start      | HOME
+K END  Go to End        | END
+K PRV  Previous Edit    | UP
+K NXT  Next Edit        | DOWN
+K -5   Back 5 Frames    | SHIFT+LEFT
+K +5   Forward 5 Frames | SHIFT+RIGHT
+K MK-  Previous Marker  | CMD+SHIFT+M
+K MK+  Next Marker      | SHIFT+M
+K FIT  Zoom to Fit      | BACKSLASH
+K MAX  Maximize Panel   | SHIFT+`
+K FULL Full Screen      | CTRL+`
+K REND Render In to Out | ENTER
+K Z+   Zoom In          | =
+K Z-   Zoom Out         | -
+K TRK+ Taller Tracks    | CMD+=
+K TRK- Shorter Tracks   | CMD+-
 DIAL 1 FRAME   | RIGHT | LEFT
 DIAL 2 JUMP 5  | SHIFT+RIGHT | SHIFT+LEFT
 DIAL 3 CUTS    | DOWN | UP
@@ -99,48 +106,48 @@ DIAL 6 VOLUME  | ] | [
 
 PAGE CLIPS
 BLOCK 1 CLIPS
-K COPY COPY     | CMD+C
-K PSTE PASTE    | CMD+V
-K PINS PASTE IN | CMD+SHIFT+V
-K ATTR ATTRIBS  | CMD+OPT+V
-K CUT  CUT      | CMD+X
-K ALL  SEL ALL  | CMD+A
-K NONE DESELECT | CMD+SHIFT+A
-K DEL  CLEAR    | BKSP
-K GRP  GROUP    | CMD+G
-K UGRP UNGROUP  | CMD+SHIFT+G
-K LINK LINK     | CMD+L
-K ENBL ENABLE   | SHIFT+E
-K SPD  SPEED    | CMD+R
-K GAIN GAIN     | G
-K SUB  SUBCLIP  | CMD+U
-K FIND FIND     | CMD+F
+K COPY Copy             | CMD+C
+K PSTE Paste            | CMD+V
+K PINS Paste Insert     | CMD+SHIFT+V
+K ATTR Paste Attributes | CMD+OPT+V
+K CUT  Cut              | CMD+X
+K ALL  Select All       | CMD+A
+K NONE Deselect All     | CMD+SHIFT+A
+K DEL  Clear            | BKSP
+K GRP  Group            | CMD+G
+K UGRP Ungroup          | CMD+SHIFT+G
+K LINK Link             | CMD+L
+K ENBL Enable           | SHIFT+E
+K SPD  Speed / Duration | CMD+R
+K GAIN Audio Gain       | G
+K SUB  Make Subclip     | CMD+U
+K FIND Find             | CMD+F
 BLOCK 2 FX + FILE
-K VTRN VIDEO TR | CMD+D
-K ATRN AUDIO TR | CMD+SHIFT+D
-K DTRN BOTH TR  | SHIFT+D
+K VTRN Video Transition    | CMD+D
+K ATRN Audio Transition    | CMD+SHIFT+D
+K DTRN Default Transitions | SHIFT+D
 K -
-K +1DB LOUDER   | ]
-K -1DB QUIETER  | [
-K +6DB LOUD 6   | SHIFT+]
-K -6DB QUIET 6  | SHIFT+[
-K IMP  IMPORT   | CMD+I
-K EXP  EXPORT   | CMD+M
-K SAVE SAVE     | CMD+S
-K BIN  NEW BIN  | CMD+B
-K ESC  ESCAPE   | ESC
-K ENT  ENTER    | ENTER
-K TAB  TAB      | TAB
+K +1DB Volume +1 dB        | ]
+K -1DB Volume -1 dB        | [
+K +6DB Volume +6 dB        | SHIFT+]
+K -6DB Volume -6 dB        | SHIFT+[
+K IMP  Import              | CMD+I
+K EXP  Export Media        | CMD+M
+K SAVE Save                | CMD+S
+K BIN  New Bin             | CMD+B
+K ESC  Escape              | ESC
+K ENT  Enter               | ENTER
+K TAB  Tab                 | TAB
 K -
 BLOCK 3 PANELS
-K PROJ PROJECT  | SHIFT+1
-K SRC  SOURCE   | SHIFT+2
-K TIME TIMELINE | SHIFT+3
-K PGM  PROGRAM  | SHIFT+4
-K FXC  FX CTRLS | SHIFT+5
-K MIX  TRK MIX  | SHIFT+6
-K FX   EFFECTS  | SHIFT+7
-K MED  MEDIA    | SHIFT+8
+K PROJ Project           | SHIFT+1
+K SRC  Source Monitor    | SHIFT+2
+K TIME Timeline          | SHIFT+3
+K PGM  Program Monitor   | SHIFT+4
+K FXC  Effect Controls   | SHIFT+5
+K MIX  Audio Track Mixer | SHIFT+6
+K FX   Effects           | SHIFT+7
+K MED  Media Browser     | SHIFT+8
 DIAL 1 FRAME   | RIGHT | LEFT
 DIAL 2 JUMP 5  | SHIFT+RIGHT | SHIFT+LEFT
 DIAL 3 CUTS    | DOWN | UP
@@ -152,71 +159,72 @@ DIAL 6 VOLUME  | ] | [
 const char kGrade[] = R"DECK(# i2 DECK - GRADE: DaVinci Resolve colour page, default keyboard shortcuts.
 # Resolve has no shortcuts or MIDI for Lift / Gamma / Gain, so the wheel
 # trims OFFSET through Resolve's printer lights (the number pad keys).
-# 1. Press LITE (Color > Printer Light Hotkeys). Resolve turns them off
-#    again when it restarts or you change project, so press LITE again then.
+# 1. Press Printer Lights (LITE: Color > Printer Light Hotkeys). Resolve
+#    turns them off again when it restarts or you change project, so press
+#    it again then.
 # 2. Pick OFS ALL / OFS RED / OFS GRN / OFS BLU and turn. The Offset wheel
 #    and the printer lights readout move.
 # On Windows the deck turns Num Lock on by itself (with Num Lock off the
 # number pad sends arrows and Home/End instead).
 # Screen button 6 switches GRADE to Premiere (that side is gradepr.txt).
 DECK GRADE
-REV 4
+REV 5
 APP DaVinci Resolve
 LINK KEYS
 COLOR FFB454
 
 PAGE COLOR
 BLOCK 1 NODES
-K SER  SERIAL   | OPT+S
-K PAR  PARALLEL | OPT+P
-K LAYR LAYER    | OPT+L
-K OUTS OUTSIDE  | OPT+O
-K CIRC + CIRCLE | OPT+C
-K LIN  + LINEAR | OPT+Q
-K POLY + POLY   | OPT+G
-K CURV + CURVE  | OPT+B
-K ND-  PREV ND  | SHIFT+OPT+;
-K ND+  NEXT ND  | SHIFT+OPT+'
-K NODE NODE OFF | CMD+D
-K BYP  BYPASS   | SHIFT+D
-K RST  RESET ND | SHIFT+HOME
-K RSTG RESET GR | CMD+SHIFT+HOME
-K RALL RESET ALL| CMD+HOME
-K AUTO AUTO     | OPT+SHIFT+C
+K SER  Serial Node          | OPT+S
+K PAR  Parallel Node        | OPT+P
+K LAYR Layer Node           | OPT+L
+K OUTS Outside Node         | OPT+O
+K CIRC Circle Window        | OPT+C
+K LIN  Linear Window        | OPT+Q
+K POLY Polygon Window       | OPT+G
+K CURV Curve Window         | OPT+B
+K ND-  Previous Node        | SHIFT+OPT+;
+K ND+  Next Node            | SHIFT+OPT+'
+K NODE Node On / Off        | CMD+D
+K BYP  Bypass Grades        | SHIFT+D
+K RST  Reset Node           | SHIFT+HOME
+K RSTG Reset Grade          | CMD+SHIFT+HOME
+K RALL Reset Grades + Nodes | CMD+HOME
+K AUTO Auto Color           | OPT+SHIFT+C
 BLOCK 2 COMPARE
-K GRAB GRAB STL | CMD+OPT+G
-K WIPE WIPE     | CMD+W
-K SPLT SPLIT    | CMD+OPT+W
-K HILT HILITE   | SHIFT+H
-K VER+ NEW VER  | CMD+Y
-K VNXT NEXT VER | CMD+N
-K VPRV PREV VER | CMD+B
-K VDEF DEFAULT  | CMD+U
-K =1   GRADE -1 | =
-K =2   GRADE -2 | -
-K COPY COPY     | CMD+C
-K PSTE PASTE    | CMD+V
-K LDA  LOAD A   | CMD+1
-K LDB  LOAD B   | CMD+2
-K SVA  SAVE A   | OPT+1
-K SVB  SAVE B   | OPT+2
+K GRAB Grab Still        | CMD+OPT+G
+K WIPE Wipe On / Off     | CMD+W
+K SPLT Split Screen      | CMD+OPT+W
+K HILT Highlight         | SHIFT+H
+K VER+ Add Version       | CMD+Y
+K VNXT Next Version      | CMD+N
+K VPRV Previous Version  | CMD+B
+K VDEF Default Version   | CMD+U
+K =1   Grade from 1 Back | =
+K =2   Grade from 2 Back | -
+K COPY Copy Grade        | CMD+C
+K PSTE Paste Grade       | CMD+V
+K LDA  Load Memory A     | CMD+1
+K LDB  Load Memory B     | CMD+2
+K SVA  Save Memory A     | OPT+1
+K SVB  Save Memory B     | OPT+2
 BLOCK 3 LIGHTS + PLAY
-K R+   RED +    | KP7
-K G+   GREEN +  | KP8
-K B+   BLUE +   | KP9
-K M+   MASTER + | KPPLUS
-K R-   RED -    | KP4
-K G-   GREEN -  | KP5
-K B-   BLUE -   | KP6
-K M-   MASTER - | KPENTER
-K LITE LIGHTS   | CMD+OPT+`
-K FULL CINEMA   | P
-K UNDO UNDO     | CMD+Z
-K REDO REDO     | CMD+SHIFT+Z
-K CLP- PREV CLP | UP
-K CLP+ NEXT CLP | DOWN
-K REV  REVERSE  | J
-K FWD  FORWARD  | L
+K R+   Red +          | KP7
+K G+   Green +        | KP8
+K B+   Blue +         | KP9
+K M+   Master +       | KPPLUS
+K R-   Red -          | KP4
+K G-   Green -        | KP5
+K B-   Blue -         | KP6
+K M-   Master -       | KPENTER
+K LITE Printer Lights | CMD+OPT+`
+K FULL Cinema Viewer  | P
+K UNDO Undo           | CMD+Z
+K REDO Redo           | CMD+SHIFT+Z
+K CLP- Previous Clip  | UP
+K CLP+ Next Clip      | DOWN
+K REV  Reverse        | J
+K FWD  Forward        | L
 DIAL 1 OFS ALL | KPPLUS | KPENTER
 DIAL 2 OFS RED | KP7 | KP4
 DIAL 3 OFS GRN | KP8 | KP5
@@ -244,7 +252,7 @@ const char kGradePremiere[] = R"DECK(# i2 DECK - GRADE, Premiere side: Premiere'
 # Return or Esc accepts. Hold H to hide the HUD. The Tracker's Shift adds
 # Shift to the wheel (Premiere's Shift Nudge, a bigger step).
 DECK GRADE
-REV 3
+REV 4
 APP Premiere Color Mode
 LINK KEYS
 COLOR B48CFF
@@ -260,37 +268,37 @@ PAGE COLOR
 # Reference Marker, Swap Sides, Split Horizontal, Split Vertical have no
 # default keys [OK]; the keys here are [SET].
 BLOCK 1 MODE + VIEW
-K EDIT EDIT MODE | OPT+2
-K COLR COLOR MODE| OPT+3
-K EXPT EXPORT MOD| OPT+4
-K CMPR COMPARE   | CMD+3
-K PREV PREV CLIP | UP
-K NEXT NEXT CLIP | DOWN
-K OK   ACCEPT    | ENTER
-K ESC  ESCAPE    | ESC
-K HUD  HIDE HUD  | H
-K PLAY PLAY      | SPACE
-K UNDO UNDO      | CMD+Z
-K REDO REDO      | CMD+SHIFT+Z
-K MARK MARKER    | CMD+M
-K REF  REF MARKER| CTRL+OPT+M
-K SWAP SWAP SIDES| CTRL+OPT+S
-K SPLT SPLIT     | CTRL+OPT+H
+K EDIT Edit Mode        | OPT+2
+K COLR Color Mode       | OPT+3
+K EXPT Export Mode      | OPT+4
+K CMPR Comparison View  | CMD+3
+K PREV Previous Clip    | UP
+K NEXT Next Clip        | DOWN
+K OK   Accept           | ENTER
+K ESC  Escape           | ESC
+K HUD  Hide HUD         | H
+K PLAY Play             | SPACE
+K UNDO Undo             | CMD+Z
+K REDO Redo             | CMD+SHIFT+Z
+K MARK Add Marker       | CMD+M
+K REF  Reference Marker | CTRL+OPT+M
+K SWAP Swap Sides       | CTRL+OPT+S
+K SPLT Split Horizontal | CTRL+OPT+H
 # NUDGE: the arrow keys move a latched control [OK]; Shift + arrow is the
 # bigger Shift Nudge step (set in Color Control options) [??].
 # J / K / L shuttle in Color Mode [??].
 BLOCK 2 NUDGE + PLAY
-K UP   NUDGE UP  | UP
-K DOWN NUDGE DN  | DOWN
-K LEFT NUDGE LT  | LEFT
-K RGHT NUDGE RT  | RIGHT
-K UP+  BIG UP    | SHIFT+UP
-K DN+  BIG DOWN  | SHIFT+DOWN
-K LT+  BIG LEFT  | SHIFT+LEFT
-K RT+  BIG RIGHT | SHIFT+RIGHT
-K REV  REVERSE   | J
-K STOP STOP      | K
-K FWD  FORWARD   | L
+K UP   Nudge Up        | UP
+K DOWN Nudge Down      | DOWN
+K LEFT Nudge Left      | LEFT
+K RGHT Nudge Right     | RIGHT
+K UP+  Big Nudge Up    | SHIFT+UP
+K DN+  Big Nudge Down  | SHIFT+DOWN
+K LT+  Big Nudge Left  | SHIFT+LEFT
+K RT+  Big Nudge Right | SHIFT+RIGHT
+K REV  Reverse         | J
+K STOP Stop            | K
+K FWD  Forward         | L
 K -
 K -
 K -
@@ -302,22 +310,22 @@ K -
 # Shortcuts (Color Mode), give each control the key shown, or replace the
 # key here with Premiere's. Control names are from Adobe's Adjust page.
 BLOCK 3 LATCH A CONTROL
-K CONT CONTRAST  | CTRL+OPT+1
-K EXPO EXPOSURE  | CTRL+OPT+2
-K TEMP TEMPERATUR| CTRL+OPT+3
-K BAL  BALANCE   | CTRL+OPT+4
-K SAT  SATURATION| CTRL+OPT+5
-K HUE  HUE       | CTRL+OPT+6
-K LUM  LUM SHIFT | CTRL+OPT+7
-K TEXT TEXTURE   | CTRL+OPT+8
-K SHRP SHARPNESS | CTRL+OPT+9
-K PIVT PIVOT     | CTRL+OPT+0
-K BLK  BLACK     | CTRL+OPT+B
-K TINT TINT      | CTRL+OPT+T
-K SATS SAT SHIFT | CTRL+OPT+U
-K ZONE ZONES     | CTRL+OPT+Z
-K GLOB GLOBAL    | CTRL+OPT+G
-K AUTO AUTO COLOR| CTRL+OPT+A
+K CONT Contrast    | CTRL+OPT+1
+K EXPO Exposure    | CTRL+OPT+2
+K TEMP Temperature | CTRL+OPT+3
+K BAL  Balance     | CTRL+OPT+4
+K SAT  Saturation  | CTRL+OPT+5
+K HUE  Hue         | CTRL+OPT+6
+K LUM  Lum Shift   | CTRL+OPT+7
+K TEXT Texture     | CTRL+OPT+8
+K SHRP Sharpness   | CTRL+OPT+9
+K PIVT Pivot       | CTRL+OPT+0
+K BLK  Black       | CTRL+OPT+B
+K TINT Tint        | CTRL+OPT+T
+K SATS Sat Shift   | CTRL+OPT+U
+K ZONE Zones       | CTRL+OPT+Z
+K GLOB Global      | CTRL+OPT+G
+K AUTO Auto Color  | CTRL+OPT+A
 # The wheel: latch a control first, then NUDGE V / NUDGE H move it [OK].
 # With nothing latched, NUDGE V steps clips (Up / Down) [OK].
 DIAL 1 NUDGE V | UP | DOWN
@@ -335,61 +343,61 @@ const char kHub[] = R"DECK(# i2 DECK - HUB: i2 Creative Hub / ComfyUI over USB M
 DECK HUB
 APP Creative Hub
 LINK MIDI
-REV 2
+REV 3
 COLOR 5BE3A5
 
 PAGE RUN
 BLOCK 1 QUEUE
-K RUN  QUEUE
-K STOP INTERRUPT
-K CLR  CLEAR Q
-K AGN  AGAIN
-K SEED NEW SEED
-K LOCK LOCK SEED
-K B1   BATCH 1
-K B4   BATCH 4
-K PRV  PREVIOUS
-K NXT  NEXT
-K KEEP KEEP
-K TOSS TOSS
-K SAVE SAVE
-K SEND SEND
-K OPEN OPEN
-K HOME HOME
+K RUN  Queue
+K STOP Interrupt
+K CLR  Clear Queue
+K AGN  Run Again
+K SEED New Seed
+K LOCK Lock Seed
+K B1   Batch 1
+K B4   Batch 4
+K PRV  Previous
+K NXT  Next
+K KEEP Keep
+K TOSS Toss
+K SAVE Save
+K SEND Send
+K OPEN Open
+K HOME Home
 BLOCK 2 WORKFLOWS
-K W1   SLOT 1
-K W2   SLOT 2
-K W3   SLOT 3
-K W4   SLOT 4
-K W5   SLOT 5
-K W6   SLOT 6
-K W7   SLOT 7
-K W8   SLOT 8
-K W9   SLOT 9
-K W10  SLOT 10
-K W11  SLOT 11
-K W12  SLOT 12
-K W13  SLOT 13
-K W14  SLOT 14
-K W15  SLOT 15
-K W16  SLOT 16
+K W1   Slot 1
+K W2   Slot 2
+K W3   Slot 3
+K W4   Slot 4
+K W5   Slot 5
+K W6   Slot 6
+K W7   Slot 7
+K W8   Slot 8
+K W9   Slot 9
+K W10  Slot 10
+K W11  Slot 11
+K W12  Slot 12
+K W13  Slot 13
+K W14  Slot 14
+K W15  Slot 15
+K W16  Slot 16
 BLOCK 3 SHAPE + LOOKS
-K 1:1  SQUARE
-K 16:9 WIDE
-K 9:16 TALL
-K 4:3  CLASSIC
-K DRFT DRAFT
-K GOOD GOOD
-K BEST BEST
-K UPSC UPSCALE IT
-K S1   LOOK 1
-K S2   LOOK 2
-K S3   LOOK 3
-K S4   LOOK 4
-K S5   LOOK 5
-K S6   LOOK 6
-K S7   LOOK 7
-K S8   LOOK 8
+K 1:1  Square 1:1
+K 16:9 Wide 16:9
+K 9:16 Tall 9:16
+K 4:3  Classic 4:3
+K DRFT Draft
+K GOOD Good
+K BEST Best
+K UPSC Upscale
+K S1   Look 1
+K S2   Look 2
+K S3   Look 3
+K S4   Look 4
+K S5   Look 5
+K S6   Look 6
+K S7   Look 7
+K S8   Look 8
 DIAL 1 STEPS
 DIAL 2 CFG
 DIAL 3 DENOISE
@@ -411,62 +419,62 @@ const char kStatic[] = R"DECK(# i2 DECK - STATIC: the Tracker's FM radio as a so
 # Dials: @TUNE @AMOUNT (last effect touched) @LENGTH (stutter) @VOLUME
 # Turn the wheel while holding an effect to set its strength.
 DECK STATIC
-REV 3
+REV 4
 APP FM radio
 LINK RADIO
 COLOR FF5A3C
 
 PAGE TUNER
 BLOCK 1 TUNE
-K SK-  SEEK DOWN | @SEEK-
-K SK+  SEEK UP   | @SEEK+
-K ST-  STEP DOWN | @STEP-
-K ST+  STEP UP   | @STEP+
+K SK-  Seek Down | @SEEK-
+K SK+  Seek Up   | @SEEK+
+K ST-  Step Down | @STEP-
+K ST+  Step Up   | @STEP+
 BLOCK 2 STATIONS
-K P1 - | @P1
-K P2 - | @P2
-K P3 - | @P3
-K P4 - | @P4
-K P5 - | @P5
-K P6 - | @P6
-K P7 - | @P7
-K P8 - | @P8
+K P1   - | @P1
+K P2   - | @P2
+K P3   - | @P3
+K P4   - | @P4
+K P5   - | @P5
+K P6   - | @P6
+K P7   - | @P7
+K P8   - | @P8
 BLOCK 3 OUTPUT
-K SEND SIG TO CC | @SEND
-K REC  SAMPLE IT | @RECORDER
-K MON  HEAR IT   | @MON
+K SEND Signal to CC  | @SEND
+K REC  Record Sample | @RECORDER
+K MON  Hear Radio    | @MON
 DIAL 1 TUNE   | @TUNE
 DIAL 2 VOLUME | @VOLUME
 
 PAGE GLITCH
 BLOCK 1 GLITCH
-K STUT STUTTER   | @STUTTER
-K CRSH CRUSH     | @CRUSH
-K STOP TAPE STOP | @STOP
-K SCAN SCAN      | @SCAN
-K FILT FILTER    | @FILTER
-K FRZ  FREEZE    | @FREEZE
-K RSSI SIG FILTER| @RSSI
-K KILL ALL OFF   | @KILL
-K 1/4  REPEAT 1/4| @R4
-K 1/8  REPEAT 1/8| @R8
-K 1/16 REPEAT16TH| @R16
-K 1/32 REPEAT32ND| @R32
+K STUT Stutter       | @STUTTER
+K CRSH Crush         | @CRUSH
+K STOP Tape Stop     | @STOP
+K SCAN Scan          | @SCAN
+K FILT Filter        | @FILTER
+K FRZ  Freeze        | @FREEZE
+K RSSI Signal Filter | @RSSI
+K KILL All Off       | @KILL
+K 1/4  Repeat 1/4    | @R4
+K 1/8  Repeat 1/8    | @R8
+K 1/16 Repeat 1/16   | @R16
+K 1/32 Repeat 1/32   | @R32
 BLOCK 2 STATIONS
-K P1 - | @P1
-K P2 - | @P2
-K P3 - | @P3
-K P4 - | @P4
-K P5 - | @P5
-K P6 - | @P6
-K P7 - | @P7
-K P8 - | @P8
-K SK-  SEEK DOWN | @SEEK-
-K SK+  SEEK UP   | @SEEK+
+K P1   -         | @P1
+K P2   -         | @P2
+K P3   -         | @P3
+K P4   -         | @P4
+K P5   -         | @P5
+K P6   -         | @P6
+K P7   -         | @P7
+K P8   -         | @P8
+K SK-  Seek Down | @SEEK-
+K SK+  Seek Up   | @SEEK+
 BLOCK 3 OUTPUT
-K MON  HEAR IT   | @MON
-K REC  SAMPLE IT | @RECORDER
-K SEND SIG TO CC | @SEND
+K MON  Hear Radio    | @MON
+K REC  Record Sample | @RECORDER
+K SEND Signal to CC  | @SEND
 DIAL 1 TUNE   | @TUNE
 DIAL 2 AMOUNT | @AMOUNT
 DIAL 3 LENGTH | @LENGTH
@@ -491,63 +499,63 @@ const char kMixerRes[] = R"DECK(# i2 DECK - MIXER, Resolve side: the Fairlight m
 # Keys: FAIR / EDIT pages (Shift+7 / Shift+4) [OK]; clip level +/- 1 dB
 # (Option+Cmd+= / -) [??].
 DECK MIXER
-REV 1
+REV 2
 APP Resolve Fairlight
 LINK MCU
 COLOR 46D2E6
 
 PAGE MIX
 BLOCK 1 TRACKS 1-4
-K REC1 REC ARM 1 | @REC1
-K REC2 REC ARM 2 | @REC2
-K REC3 REC ARM 3 | @REC3
-K REC4 REC ARM 4 | @REC4
-K SOL1 SOLO 1 | @SOLO1
-K SOL2 SOLO 2 | @SOLO2
-K SOL3 SOLO 3 | @SOLO3
-K SOL4 SOLO 4 | @SOLO4
-K MUT1 MUTE 1 | @MUTE1
-K MUT2 MUTE 2 | @MUTE2
-K MUT3 MUTE 3 | @MUTE3
-K MUT4 MUTE 4 | @MUTE4
-K SEL1 SELECT 1 | @SEL1
-K SEL2 SELECT 2 | @SEL2
-K SEL3 SELECT 3 | @SEL3
-K SEL4 SELECT 4 | @SEL4
+K REC1 Rec Arm 1 | @REC1
+K REC2 Rec Arm 2 | @REC2
+K REC3 Rec Arm 3 | @REC3
+K REC4 Rec Arm 4 | @REC4
+K SOL1 Solo 1    | @SOLO1
+K SOL2 Solo 2    | @SOLO2
+K SOL3 Solo 3    | @SOLO3
+K SOL4 Solo 4    | @SOLO4
+K MUT1 Mute 1    | @MUTE1
+K MUT2 Mute 2    | @MUTE2
+K MUT3 Mute 3    | @MUTE3
+K MUT4 Mute 4    | @MUTE4
+K SEL1 Select 1  | @SEL1
+K SEL2 Select 2  | @SEL2
+K SEL3 Select 3  | @SEL3
+K SEL4 Select 4  | @SEL4
 BLOCK 2 TRACKS 5-8
-K REC5 REC ARM 5 | @REC5
-K REC6 REC ARM 6 | @REC6
-K REC7 REC ARM 7 | @REC7
-K REC8 REC ARM 8 | @REC8
-K SOL5 SOLO 5 | @SOLO5
-K SOL6 SOLO 6 | @SOLO6
-K SOL7 SOLO 7 | @SOLO7
-K SOL8 SOLO 8 | @SOLO8
-K MUT5 MUTE 5 | @MUTE5
-K MUT6 MUTE 6 | @MUTE6
-K MUT7 MUTE 7 | @MUTE7
-K MUT8 MUTE 8 | @MUTE8
-K SEL5 SELECT 5 | @SEL5
-K SEL6 SELECT 6 | @SEL6
-K SEL7 SELECT 7 | @SEL7
-K SEL8 SELECT 8 | @SEL8
+K REC5 Rec Arm 5 | @REC5
+K REC6 Rec Arm 6 | @REC6
+K REC7 Rec Arm 7 | @REC7
+K REC8 Rec Arm 8 | @REC8
+K SOL5 Solo 5    | @SOLO5
+K SOL6 Solo 6    | @SOLO6
+K SOL7 Solo 7    | @SOLO7
+K SOL8 Solo 8    | @SOLO8
+K MUT5 Mute 5    | @MUTE5
+K MUT6 Mute 6    | @MUTE6
+K MUT7 Mute 7    | @MUTE7
+K MUT8 Mute 8    | @MUTE8
+K SEL5 Select 5  | @SEL5
+K SEL6 Select 6  | @SEL6
+K SEL7 Select 7  | @SEL7
+K SEL8 Select 8  | @SEL8
 BLOCK 3 BANK + PLAY
-K BNK- BANK -8   | @BANK-
-K BNK+ BANK +8   | @BANK+
-K CH-  BANK -1   | @CH-
-K CH+  BANK +1   | @CH+
-K REW  REWIND    | @REW
-K FF   FAST FWD  | @FF
-K STOP STOP      | @STOP
-K PLAY PLAY      | @PLAY
-K REC  RECORD    | @RECORD
-K LOOP CYCLE     | @CYCLE
-K MARK MARKER    | @MARKER
-K UNDO UNDO      | @UNDO
-K FAIR FAIRLIGHT | SHIFT+7
-K EDIT EDIT PAGE | SHIFT+4
-K VOL+ CLIP +1DB | CMD+OPT+=
-K VOL- CLIP -1DB | CMD+OPT+-
+K BNK- Bank -8        | @BANK-
+K BNK+ Bank +8        | @BANK+
+K CH-  Bank -1        | @CH-
+K CH+  Bank +1        | @CH+
+K REW  Rewind         | @REW
+K FF   Fast Forward   | @FF
+K STOP Stop           | @STOP
+K PLAY Play           | @PLAY
+K REC  Record         | @RECORD
+K LOOP Cycle          | @CYCLE
+K MARK Add Marker     | @MARKER
+K UNDO Undo           | @UNDO
+K FAIR Fairlight Page | SHIFT+7
+K EDIT Edit Page      | SHIFT+4
+K VOL+ Clip +1 dB     | CMD+OPT+=
+K VOL- Clip -1 dB     | CMD+OPT+-
 DIAL 1 FADER    | @FADER
 DIAL 2 PAN      | @PAN
 DIAL 3 TRACK    | @STRIP
@@ -577,63 +585,63 @@ const char kMixerPr[] = R"DECK(# i2 DECK - MIXER, Premiere side: the Audio Track
 # Keys [OK]: Audio Track Mixer Shift+6, Audio Clip Mixer Shift+9, clip
 # volume +1 dB ] and -1 dB [ (Shift = 6 dB).
 DECK MIXER
-REV 1
+REV 2
 APP Premiere mixer
 LINK MCU
 COLOR 46D2E6
 
 PAGE MIX
 BLOCK 1 TRACKS 1-4
-K REC1 REC ARM 1 | @REC1
-K REC2 REC ARM 2 | @REC2
-K REC3 REC ARM 3 | @REC3
-K REC4 REC ARM 4 | @REC4
-K SOL1 SOLO 1 | @SOLO1
-K SOL2 SOLO 2 | @SOLO2
-K SOL3 SOLO 3 | @SOLO3
-K SOL4 SOLO 4 | @SOLO4
-K MUT1 MUTE 1 | @MUTE1
-K MUT2 MUTE 2 | @MUTE2
-K MUT3 MUTE 3 | @MUTE3
-K MUT4 MUTE 4 | @MUTE4
-K SEL1 SELECT 1 | @SEL1
-K SEL2 SELECT 2 | @SEL2
-K SEL3 SELECT 3 | @SEL3
-K SEL4 SELECT 4 | @SEL4
+K REC1 Rec Arm 1 | @REC1
+K REC2 Rec Arm 2 | @REC2
+K REC3 Rec Arm 3 | @REC3
+K REC4 Rec Arm 4 | @REC4
+K SOL1 Solo 1    | @SOLO1
+K SOL2 Solo 2    | @SOLO2
+K SOL3 Solo 3    | @SOLO3
+K SOL4 Solo 4    | @SOLO4
+K MUT1 Mute 1    | @MUTE1
+K MUT2 Mute 2    | @MUTE2
+K MUT3 Mute 3    | @MUTE3
+K MUT4 Mute 4    | @MUTE4
+K SEL1 Select 1  | @SEL1
+K SEL2 Select 2  | @SEL2
+K SEL3 Select 3  | @SEL3
+K SEL4 Select 4  | @SEL4
 BLOCK 2 TRACKS 5-8
-K REC5 REC ARM 5 | @REC5
-K REC6 REC ARM 6 | @REC6
-K REC7 REC ARM 7 | @REC7
-K REC8 REC ARM 8 | @REC8
-K SOL5 SOLO 5 | @SOLO5
-K SOL6 SOLO 6 | @SOLO6
-K SOL7 SOLO 7 | @SOLO7
-K SOL8 SOLO 8 | @SOLO8
-K MUT5 MUTE 5 | @MUTE5
-K MUT6 MUTE 6 | @MUTE6
-K MUT7 MUTE 7 | @MUTE7
-K MUT8 MUTE 8 | @MUTE8
-K SEL5 SELECT 5 | @SEL5
-K SEL6 SELECT 6 | @SEL6
-K SEL7 SELECT 7 | @SEL7
-K SEL8 SELECT 8 | @SEL8
+K REC5 Rec Arm 5 | @REC5
+K REC6 Rec Arm 6 | @REC6
+K REC7 Rec Arm 7 | @REC7
+K REC8 Rec Arm 8 | @REC8
+K SOL5 Solo 5    | @SOLO5
+K SOL6 Solo 6    | @SOLO6
+K SOL7 Solo 7    | @SOLO7
+K SOL8 Solo 8    | @SOLO8
+K MUT5 Mute 5    | @MUTE5
+K MUT6 Mute 6    | @MUTE6
+K MUT7 Mute 7    | @MUTE7
+K MUT8 Mute 8    | @MUTE8
+K SEL5 Select 5  | @SEL5
+K SEL6 Select 6  | @SEL6
+K SEL7 Select 7  | @SEL7
+K SEL8 Select 8  | @SEL8
 BLOCK 3 BANK + PLAY
-K BNK- BANK -8   | @BANK-
-K BNK+ BANK +8   | @BANK+
-K CH-  BANK -1   | @CH-
-K CH+  BANK +1   | @CH+
-K REW  REWIND    | @REW
-K FF   FAST FWD  | @FF
-K STOP STOP      | @STOP
-K PLAY PLAY      | @PLAY
-K REC  RECORD    | @RECORD
-K LOOP CYCLE     | @CYCLE
-K MARK MARKER    | @MARKER
-K UNDO UNDO      | @UNDO
-K MIX  TRACK MIX | SHIFT+6
-K CMIX CLIP MIX  | SHIFT+9
-K VOL+ CLIP +1DB | ]
-K VOL- CLIP -1DB | [
+K BNK- Bank -8           | @BANK-
+K BNK+ Bank +8           | @BANK+
+K CH-  Bank -1           | @CH-
+K CH+  Bank +1           | @CH+
+K REW  Rewind            | @REW
+K FF   Fast Forward      | @FF
+K STOP Stop              | @STOP
+K PLAY Play              | @PLAY
+K REC  Record            | @RECORD
+K LOOP Cycle             | @CYCLE
+K MARK Add Marker        | @MARKER
+K UNDO Undo              | @UNDO
+K MIX  Audio Track Mixer | SHIFT+6
+K CMIX Audio Clip Mixer  | SHIFT+9
+K VOL+ Clip +1 dB        | ]
+K VOL- Clip -1 dB        | [
 DIAL 1 FADER    | @FADER
 DIAL 2 PAN      | @PAN
 DIAL 3 TRACK    | @STRIP
@@ -655,55 +663,55 @@ const char kFileRes[] = R"DECK(# i2 DECK - FILE, Resolve side: DaVinci Resolve's
 #         Project, Import Project, Media Management, Relink Media, Quick
 #         Export; Deliver: Add to Render Queue, Render All).
 DECK FILE
-REV 1
+REV 2
 APP DaVinci Resolve
 LINK KEYS
 COLOR F2D25C
 
 PAGE FILE
 BLOCK 1 PROJECT
-K PMGR PROJ MGR  | SHIFT+1
-K NPRJ NEW PROJ  | CTRL+OPT+SHIFT+N
-K SAVE SAVE      | CMD+S
-K SVAS SAVE AS   | CMD+SHIFT+S
-K IMPJ IMPORT PRJ| CTRL+OPT+SHIFT+J
-K EXPJ EXPORT PRJ| CMD+E
-K QUIT QUIT      | CMD+Q
+K PMGR Project Manager | SHIFT+1
+K NPRJ New Project     | CTRL+OPT+SHIFT+N
+K SAVE Save            | CMD+S
+K SVAS Save As         | CMD+SHIFT+S
+K IMPJ Import Project  | CTRL+OPT+SHIFT+J
+K EXPJ Export Project  | CMD+E
+K QUIT Quit            | CMD+Q
 K -
 K -
 K -
 K -
 K -
-K UNDO UNDO      | CMD+Z
-K REDO REDO      | CMD+SHIFT+Z
-K ENT  ENTER     | ENTER
-K ESC  ESCAPE    | ESC
+K UNDO Undo            | CMD+Z
+K REDO Redo            | CMD+SHIFT+Z
+K ENT  Enter           | ENTER
+K ESC  Escape          | ESC
 BLOCK 2 NEW + IMPORT
-K NTL  NEW TIMELN| CMD+N
-K NBIN NEW BIN   | CMD+SHIFT+N
-K IMP  IMPORT    | CMD+I
-K IMTL IMPORT TL | CMD+SHIFT+I
-K MEDP MEDIA PAGE| SHIFT+2
-K MGMT MEDIA MGMT| CTRL+OPT+SHIFT+M
-K RLNK RELINK    | CTRL+OPT+SHIFT+L
+K NTL  New Timeline     | CMD+N
+K NBIN New Bin          | CMD+SHIFT+N
+K IMP  Import Media     | CMD+I
+K IMTL Import Timeline  | CMD+SHIFT+I
+K MEDP Media Page       | SHIFT+2
+K MGMT Media Management | CTRL+OPT+SHIFT+M
+K RLNK Relink Media     | CTRL+OPT+SHIFT+L
 K -
 K -
 K -
 K -
 K -
-K TAB  NEXT FIELD| TAB
-K STAB PREV FIELD| SHIFT+TAB
-K UP   UP        | UP
-K DOWN DOWN      | DOWN
+K TAB  Next Field       | TAB
+K STAB Previous Field   | SHIFT+TAB
+K UP   Up               | UP
+K DOWN Down             | DOWN
 BLOCK 3 EXPORT + DELIVER
-K DLVR DELIVER PG| SHIFT+8
-K EXTL EXPORT TL | CMD+SHIFT+O
-K QEXP QUICK EXP | CTRL+OPT+SHIFT+Q
-K ADDQ ADD TO Q  | CTRL+OPT+SHIFT+A
-K RNDR RENDER ALL| CTRL+OPT+SHIFT+R
+K DLVR Deliver Page        | SHIFT+8
+K EXTL Export Timeline     | CMD+SHIFT+O
+K QEXP Quick Export        | CTRL+OPT+SHIFT+Q
+K ADDQ Add to Render Queue | CTRL+OPT+SHIFT+A
+K RNDR Render All          | CTRL+OPT+SHIFT+R
 K -
-K EDIT EDIT PAGE | SHIFT+4
-K CUTP CUT PAGE  | SHIFT+3
+K EDIT Edit Page           | SHIFT+4
+K CUTP Cut Page            | SHIFT+3
 DIAL 1 LIST     | DOWN | UP
 DIAL 2 FIELDS   | TAB | SHIFT+TAB
 DIAL 3 LEFT/RT  | RIGHT | LEFT
@@ -721,58 +729,58 @@ const char kFilePr[] = R"DECK(# i2 DECK - FILE, Premiere side: Premiere Pro's Fi
 #         Clip > Make Offline, File > Export > EDL / Final Cut Pro XML /
 #         AAF, Sequence > Render Audio, Sequence > Delete Render Files).
 DECK FILE
-REV 1
+REV 2
 APP Premiere Pro
 LINK KEYS
 COLOR F2D25C
 
 PAGE FILE
 BLOCK 1 PROJECT
-K NPRJ NEW PROJ  | CMD+OPT+N
-K OPEN OPEN PROJ | CMD+O
-K SAVE SAVE      | CMD+S
-K SVAS SAVE AS   | CMD+SHIFT+S
-K COPY SAVE COPY | CMD+OPT+S
-K CLOS CLOSE     | CMD+W
-K CLPJ CLOSE PRJ | CMD+SHIFT+W
-K QUIT QUIT      | CMD+Q
-K REVT REVERT    | CTRL+OPT+SHIFT+R
-K MGMT PROJ MGR  | CTRL+OPT+SHIFT+P
-K PROP PROPERTIES| CMD+SHIFT+H
+K NPRJ New Project     | CMD+OPT+N
+K OPEN Open Project    | CMD+O
+K SAVE Save            | CMD+S
+K SVAS Save As         | CMD+SHIFT+S
+K COPY Save a Copy     | CMD+OPT+S
+K CLOS Close           | CMD+W
+K CLPJ Close Project   | CMD+SHIFT+W
+K QUIT Quit            | CMD+Q
+K REVT Revert          | CTRL+OPT+SHIFT+R
+K MGMT Project Manager | CTRL+OPT+SHIFT+P
+K PROP Properties      | CMD+SHIFT+H
 K -
-K UNDO UNDO      | CMD+Z
-K REDO REDO      | CMD+SHIFT+Z
-K ENT  ENTER     | ENTER
-K ESC  ESCAPE    | ESC
+K UNDO Undo            | CMD+Z
+K REDO Redo            | CMD+SHIFT+Z
+K ENT  Enter           | ENTER
+K ESC  Escape          | ESC
 BLOCK 2 NEW + IMPORT
-K NSEQ NEW SEQ   | CMD+N
-K NBIN NEW BIN   | CMD+B
-K IMP  IMPORT    | CMD+I
-K IMB  IMPORT MB | CMD+OPT+I
-K PROJ PROJECTS  | SHIFT+1
-K MBRW MEDIA BRWS| SHIFT+8
-K SRC  TO SOURCE | SHIFT+O
+K NSEQ New Sequence        | CMD+N
+K NBIN New Bin             | CMD+B
+K IMP  Import              | CMD+I
+K IMB  Import from Browser | CMD+OPT+I
+K PROJ Project Panel       | SHIFT+1
+K MBRW Media Browser       | SHIFT+8
+K SRC  Open in Source      | SHIFT+O
 K -
-K LINK LINK MEDIA| CTRL+OPT+SHIFT+L
-K OFFL OFFLINE   | CTRL+OPT+SHIFT+O
+K LINK Link Media          | CTRL+OPT+SHIFT+L
+K OFFL Make Offline        | CTRL+OPT+SHIFT+O
 K -
 K -
-K TAB  NEXT FIELD| TAB
-K STAB PREV FIELD| SHIFT+TAB
-K UP   UP        | UP
-K DOWN DOWN      | DOWN
+K TAB  Next Field          | TAB
+K STAB Previous Field      | SHIFT+TAB
+K UP   Up                  | UP
+K DOWN Down                | DOWN
 BLOCK 3 EXPORT + RENDER
-K EXP  EXPORT    | CMD+M
-K AME  TO ENCODER| OPT+SHIFT+M
-K FRAM EXPORT FRM| CMD+SHIFT+E
-K EXPM EXPORT MOD| OPT+4
-K EDL  EXPORT EDL| CTRL+OPT+SHIFT+E
-K XML  EXPORT XML| CTRL+OPT+SHIFT+X
-K AAF  EXPORT AAF| CTRL+OPT+SHIFT+F
+K EXP  Export Media        | CMD+M
+K AME  Send to Encoder     | OPT+SHIFT+M
+K FRAM Export Frame        | CMD+SHIFT+E
+K EXPM Export Mode         | OPT+4
+K EDL  Export EDL          | CTRL+OPT+SHIFT+E
+K XML  Export XML          | CTRL+OPT+SHIFT+X
+K AAF  Export AAF          | CTRL+OPT+SHIFT+F
 K -
-K REND RENDER I/O| ENTER
-K RAUD RENDER AUD| CTRL+OPT+SHIFT+A
-K DREN DEL RENDER| CTRL+OPT+SHIFT+D
+K REND Render In to Out    | ENTER
+K RAUD Render Audio        | CTRL+OPT+SHIFT+A
+K DREN Delete Render Files | CTRL+OPT+SHIFT+D
 DIAL 1 LIST     | DOWN | UP
 DIAL 2 FIELDS   | TAB | SHIFT+TAB
 DIAL 3 LEFT/RT  | RIGHT | LEFT
@@ -793,50 +801,50 @@ const char kSetupRes[] = R"DECK(# i2 DECK - SETUP, Resolve side: DaVinci Resolve
 #         Playback > Use Proxy Media if Available; Use Optimized Media if
 #         Available).
 DECK SETUP
-REV 1
+REV 2
 APP DaVinci Resolve
 LINK KEYS
 COLOR F28FB8
 
 PAGE SETUP
 BLOCK 1 SETTINGS
-K PREF PREFS     | CMD+,
-K KEYS SHORTCUTS | CMD+OPT+K
-K PSET PROJ SET  | SHIFT+9
-K PMGR PROJ MGR  | SHIFT+1
-K TLST TL SETTING| CTRL+OPT+SHIFT+T
+K PREF Preferences         | CMD+,
+K KEYS Keyboard Shortcuts  | CMD+OPT+K
+K PSET Project Settings    | SHIFT+9
+K PMGR Project Manager     | SHIFT+1
+K TLST Timeline Settings   | CTRL+OPT+SHIFT+T
 K -
 K -
 K -
-K RCOF CACHE NONE| CTRL+OPT+SHIFT+O
-K RCSM CACHE SMRT| CTRL+OPT+SHIFT+S
-K RCUS CACHE USER| CTRL+OPT+SHIFT+U
-K RCCO CACHE CLIP| CTRL+OPT+SHIFT+C
-K DRC  DEL CACHE | CTRL+OPT+SHIFT+D
-K PRXY PROXY     | CTRL+OPT+SHIFT+P
-K OPTM OPTIMIZED | CTRL+OPT+SHIFT+Z
+K RCOF Render Cache None   | CTRL+OPT+SHIFT+O
+K RCSM Render Cache Smart  | CTRL+OPT+SHIFT+S
+K RCUS Render Cache User   | CTRL+OPT+SHIFT+U
+K RCCO Cache Clip Output   | CTRL+OPT+SHIFT+C
+K DRC  Delete Render Cache | CTRL+OPT+SHIFT+D
+K PRXY Use Proxy Media     | CTRL+OPT+SHIFT+P
+K OPTM Use Optimized Media | CTRL+OPT+SHIFT+Z
 BLOCK 2 PAGES
-K MEDP MEDIA     | SHIFT+2
-K CUTP CUT       | SHIFT+3
-K EDIT EDIT      | SHIFT+4
-K FUSN FUSION    | SHIFT+5
-K COLR COLOR     | SHIFT+6
-K FAIR FAIRLIGHT | SHIFT+7
-K DLVR DELIVER   | SHIFT+8
-K CNMA CINEMA    | P
+K MEDP Media Page     | SHIFT+2
+K CUTP Cut Page       | SHIFT+3
+K EDIT Edit Page      | SHIFT+4
+K FUSN Fusion Page    | SHIFT+5
+K COLR Color Page     | SHIFT+6
+K FAIR Fairlight Page | SHIFT+7
+K DLVR Deliver Page   | SHIFT+8
+K CNMA Cinema Viewer  | P
 BLOCK 3 DIALOG
-K ENT  ENTER     | ENTER
-K ESC  ESCAPE    | ESC
-K TAB  NEXT FIELD| TAB
-K STAB PREV FIELD| SHIFT+TAB
-K UP   UP        | UP
-K DOWN DOWN      | DOWN
-K LEFT LEFT      | LEFT
-K RGHT RIGHT     | RIGHT
-K SPC  SPACE     | SPACE
+K ENT  Enter          | ENTER
+K ESC  Escape         | ESC
+K TAB  Next Field     | TAB
+K STAB Previous Field | SHIFT+TAB
+K UP   Up             | UP
+K DOWN Down           | DOWN
+K LEFT Left           | LEFT
+K RGHT Right          | RIGHT
+K SPC  Space          | SPACE
 K -
-K UNDO UNDO      | CMD+Z
-K SAVE SAVE      | CMD+S
+K UNDO Undo           | CMD+Z
+K SAVE Save           | CMD+S
 DIAL 1 LIST     | DOWN | UP
 DIAL 2 FIELDS   | TAB | SHIFT+TAB
 DIAL 3 LEFT/RT  | RIGHT | LEFT
@@ -860,51 +868,51 @@ const char kSetupPr[] = R"DECK(# i2 DECK - SETUP, Premiere side: Premiere Pro's 
 #         Delete Render Files). On Windows these are under Edit >
 #         Preferences.
 DECK SETUP
-REV 1
+REV 2
 APP Premiere Pro
 LINK KEYS
 COLOR F28FB8
 
 PAGE SETUP
 BLOCK 1 SETTINGS
-K PREF GENERAL   | CTRL+OPT+SHIFT+G
-K KEYS SHORTCUTS | CMD+OPT+K
-K AUD  AUDIO     | CTRL+OPT+SHIFT+U
-K AHW  AUDIO HW  | CTRL+OPT+SHIFT+H
-K MEDI MEDIA     | CTRL+OPT+SHIFT+I
-K MCAC MEDIA CACH| CTRL+OPT+SHIFT+C
-K PLAY PLAYBACK  | CTRL+OPT+SHIFT+B
-K TIME TIMELINE  | CTRL+OPT+SHIFT+T
-K AUTO AUTO SAVE | CTRL+OPT+SHIFT+V
-K SURF CTRL SURF | CTRL+OPT+SHIFT+S
+K PREF General            | CTRL+OPT+SHIFT+G
+K KEYS Keyboard Shortcuts | CMD+OPT+K
+K AUD  Audio              | CTRL+OPT+SHIFT+U
+K AHW  Audio Hardware     | CTRL+OPT+SHIFT+H
+K MEDI Media              | CTRL+OPT+SHIFT+I
+K MCAC Media Cache        | CTRL+OPT+SHIFT+C
+K PLAY Playback           | CTRL+OPT+SHIFT+B
+K TIME Timeline           | CTRL+OPT+SHIFT+T
+K AUTO Auto Save          | CTRL+OPT+SHIFT+V
+K SURF Control Surface    | CTRL+OPT+SHIFT+S
 BLOCK 2 PROJECT + VIEW
-K PSET PROJ SET  | CTRL+OPT+SHIFT+J
-K SCR  SCRATCH   | CTRL+OPT+SHIFT+W
-K SSET SEQ SET   | CTRL+OPT+SHIFT+Q
-K PMGR PROJ MGR  | CTRL+OPT+SHIFT+P
-K REND RENDER I/O| ENTER
-K RAUD RENDER AUD| CTRL+OPT+SHIFT+A
-K DREN DEL RENDER| CTRL+OPT+SHIFT+D
+K PSET Project Settings    | CTRL+OPT+SHIFT+J
+K SCR  Scratch Disks       | CTRL+OPT+SHIFT+W
+K SSET Sequence Settings   | CTRL+OPT+SHIFT+Q
+K PMGR Project Manager     | CTRL+OPT+SHIFT+P
+K REND Render In to Out    | ENTER
+K RAUD Render Audio        | CTRL+OPT+SHIFT+A
+K DREN Delete Render Files | CTRL+OPT+SHIFT+D
 K -
-K EDIT EDIT MODE | OPT+2
-K COLR COLOR MODE| OPT+3
-K EXPT EXPORT MOD| OPT+4
-K WSRS RESET WS  | OPT+SHIFT+0
-K MAX  MAXIMIZE  | SHIFT+`
-K FULL FULLSCRN  | CTRL+`
+K EDIT Edit Mode           | OPT+2
+K COLR Color Mode          | OPT+3
+K EXPT Export Mode         | OPT+4
+K WSRS Reset Workspace     | OPT+SHIFT+0
+K MAX  Maximize Panel      | SHIFT+`
+K FULL Full Screen         | CTRL+`
 BLOCK 3 DIALOG
-K ENT  ENTER     | ENTER
-K ESC  ESCAPE    | ESC
-K TAB  NEXT FIELD| TAB
-K STAB PREV FIELD| SHIFT+TAB
-K UP   UP        | UP
-K DOWN DOWN      | DOWN
-K LEFT LEFT      | LEFT
-K RGHT RIGHT     | RIGHT
-K SPC  SPACE     | SPACE
+K ENT  Enter          | ENTER
+K ESC  Escape         | ESC
+K TAB  Next Field     | TAB
+K STAB Previous Field | SHIFT+TAB
+K UP   Up             | UP
+K DOWN Down           | DOWN
+K LEFT Left           | LEFT
+K RGHT Right          | RIGHT
+K SPC  Space          | SPACE
 K -
-K UNDO UNDO      | CMD+Z
-K SAVE SAVE      | CMD+S
+K UNDO Undo           | CMD+Z
+K SAVE Save           | CMD+S
 DIAL 1 LIST     | DOWN | UP
 DIAL 2 FIELDS   | TAB | SHIFT+TAB
 DIAL 3 LEFT/RT  | RIGHT | LEFT

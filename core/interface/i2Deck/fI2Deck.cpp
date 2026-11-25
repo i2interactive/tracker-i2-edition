@@ -593,6 +593,16 @@ void cI2Deck::update()
         {
             display.synchronizeRefresh();
         }
+        else
+        {
+            // Everything is drawn: tell the deck how big the frame really is.
+            uint16_t bytes = 0;
+            for (uint8_t l = 0; l < kLayerCount; l++)
+            {
+                if (layerData[l].canvas) bytes = (uint16_t)(bytes + layerData[l].canvas->dlBytes());
+            }
+            s_app.frameBytes(bytes);
+        }
     }
 }
 

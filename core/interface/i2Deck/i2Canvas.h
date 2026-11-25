@@ -31,6 +31,7 @@ class Ft812Gfx final : public Gfx
     virtual void text(int16_t x, int16_t y, uint8_t font, uint8_t align, const char* s, int len = 0) override;
     virtual int16_t textWidth(uint8_t font, const char* s, int len = -1) override;
     virtual int16_t fontHeight(uint8_t font) override;
+    virtual void origin(int16_t dx) override;
     virtual void dot(int16_t x, int16_t y, uint8_t size, uint8_t align, const char* s, int len = 0) override;
     virtual void clip(int16_t x, int16_t y, int16_t w, int16_t h) override;
     virtual void unclip() override;
@@ -45,10 +46,13 @@ class Ft812Gfx final : public Gfx
     uint16_t skippedCount = 0;
 };
 
+class cI2Canvas;
+
 struct CanvasData
 {
     Game* game = nullptr;
     uint8_t layer = 0;
+    const cI2Canvas* canvas = nullptr; // set by the canvas, to read its size
 };
 
 class cI2Canvas : public cDisplayControl
@@ -63,7 +67,15 @@ class cI2Canvas : public cDisplayControl
     virtual void setText(const char* text) override { this->text = text; }
     virtual void setValue(int value) override { this->value = value; }
     virtual void setColors(const uint32_t* colors) override { this->colors = colors; }
-    virtual void setData(void* data) override { this->data = (CanvasData*)data; }
+    virtual void setData(void* data) override
+    {
+        this->data = (CanvasData*)data;
+        if (this->data) this->data->canvas = this;
+    }
+
+    // Display-list bytes this layer took when it was last drawn: what the
+    // Tracker appends to every frame (it stops appending at 8172 bytes).
+    uint16_t dlBytes() const { return ramSize; }
 
   private:
     CanvasData* data = nullptr;

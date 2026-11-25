@@ -18,6 +18,7 @@ constexpr uint32_t kDark = 0x0B0B0C, kLine = 0x2E2E33, kTrack = 0x1E1E22, kHomeA
 constexpr size_t kDeckOffset = 0;
 constexpr size_t kTextOffset = 16 * 1024;
 constexpr size_t kTextCap = 16 * 1024;
+static_assert(sizeof(Deck) <= kTextOffset, "a parsed deck must fit below the deck text in scratch memory");
 
 const char* const kSettingsPath = "i2/Deck/settings.txt";
 
@@ -310,7 +311,7 @@ int parseDeck(const char* text, size_t length, Deck& out)
             PadDef& d = page->pads[padIndex];
             memset(&d, 0, sizeof(d));
             copyUpper(d.mn, sizeof(d.mn), m, me);
-            copyUpper(d.label, sizeof(d.label), l, lEnd);
+            copyText(d.label, sizeof(d.label), l, lEnd); // shown as written
             if (nf >= 2 && fs[1] < fe[1])
             {
                 if (*fs[1] == '@')
@@ -624,6 +625,7 @@ void DeckApp::setPage(uint8_t p)
     dialSel = 0;
     memset(dialNet, 0, sizeof(dialNet));
     glitchPage = false;
+    shortMask = 0; // a new page gets full names again
     for (uint8_t i = 0; i < kPads; i++)
     {
         uint8_t a = page().pads[i].act;
@@ -640,6 +642,28 @@ void DeckApp::setPage(uint8_t p)
     }
     dirtyMask = 0x3F;
     lightPads();
+}
+
+// The Tracker stops adding layers to a frame at 8172 bytes; keep i2 DECK's
+// six layers under this so a popup still fits.
+constexpr uint16_t kFrameLimit = 7600;
+
+void DeckApp::frameBytes(uint16_t bytes)
+{
+    if (bytes == measured) return;
+    measured = bytes;
+    if (shift && !home) dirtyMask |= 1u << kLayerChrome; // the readout
+    if (home || bytes <= kFrameLimit || shortMask == 7) return;
+    for (int b = 2; b >= 0; b--)
+    {
+        if (!(shortMask & (1u << b)))
+        {
+            shortMask |= (uint8_t)(1u << b);
+            dirtyMask |= 1u << (kLayerBlockA + b);
+            break;
+        }
+    }
+    flash("SCREEN FULL: SHORT NAMES");
 }
 
 bool DeckApp::padOn(uint8_t p) const
@@ -987,7 +1011,12 @@ void DeckApp::pad(uint8_t padIndex, bool down)
         {
             io->midiNote(padIndex, true, (uint8_t)(pageIndex + 1));
         }
-        note(d.label[0] ? d.label : d.mn);
+        // the live band: the pad's full name, and the shortcut it sent
+        char said[48];
+        char combo[24] = "";
+        if (keyHeld & (1ULL << padIndex)) i2ctl::formatCombo(c, mac, combo, sizeof(combo));
+        snprintf(said, sizeof(said), "%s%s%s", d.label[0] ? d.label : d.mn, combo[0] ? "   " : "", combo);
+        note(said);
         if (strcmp(d.mn, "LITE") == 0)
         {
             // Resolve's Printer Light Hotkeys is a toggle
@@ -1028,6 +1057,7 @@ void DeckApp::button(Button b, bool down)
     {
         shift = down;
         comboHeld(shift && recHeld);
+        if (!home && measured) dirtyMask |= 1u << kLayerChrome; // the readout
         return;
     }
     if (b == Button::Rec)
@@ -1216,7 +1246,7 @@ void DeckApp::jog(int16_t steps)
         if (!lightsOn && c.key >= 0x54 && c.key <= 0x63 && pageHasPad("LITE") &&
             (liteHintAt == 0 || (int32_t)(nowMs - liteHintAt) > 4000))
         {
-            flash("LIGHTS OFF? PRESS LITE");
+            flash("PRESS PRINTER LIGHTS FIRST");
             liteHintAt = nowMs ? nowMs : 1;
         }
         for (int i = 0; i < n; i++) tap(c);
@@ -1546,6 +1576,13 @@ void DeckApp::drawChrome(Gfx& g)
     const uint32_t accent = home ? kHomeAccent : deck().accent;
     const char* title = home ? "DECK" : deck().name;
     const char* app = home ? "Tracker i2 edition" : deck().app;
+    char screenBuf[24];
+    if (shift && !home && measured)
+    {
+        // hold Shift: how full the screen's display memory is
+        snprintf(screenBuf, sizeof(screenBuf), "Screen %u / 8172 B", (unsigned)measured);
+        app = screenBuf;
+    }
 
     g.color(accent);
     g.dot(12, 8, 1, kLeft, "i2");
@@ -1725,7 +1762,7 @@ void DeckApp::drawLive(Gfx& g)
     const bool radio = deck().link == kLinkRadio;
     const DialDef& sel = page().dials[dialSel];
     char big[24];
-    char sub[64];
+    char sub[80];
 
     if (radio && glitchPage)
     {
@@ -2016,10 +2053,154 @@ void DeckApp::drawGlitch(Gfx& g)
     g.text(700, 132, kFont12, kLeft, "SIGNAL");
 }
 
+namespace
+{
+// Word wrap for a pad's name. Lines go into `out`; returns false when the
+// name needs more than maxLines (with clip, the extra is dropped instead).
+class Wrapper
+{
+  public:
+    Wrapper(Gfx& gfx, uint8_t f, int16_t w, uint8_t most, LabelFit& o) : g(gfx), font(f), width(w), maxLines(most), out(o)
+    {
+        out.font = f;
+        out.lines = 0;
+        for (auto& l : out.line) l[0] = 0;
+        hyphenW = g.textWidth(f, "-", 1);
+    }
+
+    int16_t measure(const char* s, int n) { return g.textWidth(font, s, n); }
+
+    // Adds a piece of text to the current line, or starts a new one. A piece
+    // ending in a hyphen ends its line.
+    bool place(const char* s, int n, bool hyphen)
+    {
+        if (n <= 0) return true;
+        if (n > 23) n = 23;
+        if (curLen > 0)
+        {
+            char t[52];
+            int tn = snprintf(t, sizeof(t), "%.*s %.*s%s", (int)curLen, cur, n, s, hyphen ? "-" : "");
+            if (tn < (int)sizeof(cur) && measure(t, tn) <= width)
+            {
+                memcpy(cur, t, (size_t)tn);
+                curLen = (size_t)tn;
+                return hyphen ? flush() : true;
+            }
+            if (!flush()) return false;
+        }
+        curLen = (size_t)snprintf(cur, sizeof(cur), "%.*s%s", n, s, hyphen ? "-" : "");
+        return hyphen ? flush() : true;
+    }
+
+    bool flush()
+    {
+        if (curLen == 0) return true;
+        if (out.lines >= maxLines)
+        {
+            curLen = 0;
+            return false;
+        }
+        memcpy(out.line[out.lines], cur, curLen);
+        out.line[out.lines][curLen] = 0;
+        out.lines++;
+        curLen = 0;
+        return true;
+    }
+
+    // Splits one word that is too wide: a balanced cut (Satur- / ation)
+    // when the rest then fits, else as much as fits on this line.
+    bool split(const char* w, int n)
+    {
+        if (!flush()) return false; // a split word starts its own line
+        while (n > 0 && measure(w, n) > width)
+        {
+            int best = 1;
+            int bestCost = 32767;
+            for (int k = 2; k <= n - 2; k++)
+            {
+                int a = measure(w, k) + hyphenW;
+                if (a > width) break;
+                int b = measure(w + k, n - k);
+                int cost = b <= width ? (a > b ? a : b) : 10000 - a;
+                if (cost < bestCost)
+                {
+                    bestCost = cost;
+                    best = k;
+                }
+            }
+            if (!place(w, best, true)) return false;
+            w += best;
+            n -= best;
+        }
+        return place(w, n, false);
+    }
+
+    // Lays out the whole name. canSplit: split words that don't fit.
+    bool run(const char* label, bool canSplit)
+    {
+        const char* p = label;
+        while (*p)
+        {
+            while (*p == ' ') p++;
+            if (!*p) break;
+            const char* w = p;
+            while (*p && *p != ' ') p++;
+            int n = (int)(p - w);
+            if (measure(w, n) <= width)
+            {
+                if (!place(w, n, false)) return false;
+            }
+            else if (!canSplit || !split(w, n))
+            {
+                return false;
+            }
+        }
+        return flush();
+    }
+
+  private:
+    Gfx& g;
+    uint8_t font;
+    int16_t width;
+    uint8_t maxLines;
+    LabelFit& out;
+    int16_t hyphenW = 0;
+    char cur[26] = "";
+    size_t curLen = 0;
+};
+} // namespace
+
+void fitLabel(Gfx& g, const char* label, int16_t width, LabelFit& out)
+{
+    {
+        Wrapper w(g, kFont14B, width, 2, out);
+        out.how = kFitBold;
+        if (w.run(label, false)) return;
+    }
+    {
+        Wrapper w(g, kFont12, width, 3, out);
+        out.how = kFitSmall;
+        if (w.run(label, false)) return;
+    }
+    {
+        Wrapper w(g, kFont12, width, 3, out);
+        out.how = kFitSplit;
+        if (w.run(label, true)) return;
+    }
+    // Too long even split: keep what fits in three lines.
+    Wrapper w(g, kFont12, width, 3, out);
+    out.how = kFitClipped;
+    w.run(label, true);
+}
+
 void DeckApp::drawBlock(Gfx& g, uint8_t block)
 {
     const uint32_t accent = deck().accent;
-    const int16_t bx = (int16_t)(12 + block * 263);
+    // Every block is drawn as if it were the first and shifted into place,
+    // so its text stays at x < 512, where the chip draws a character in 4
+    // display-list bytes instead of 8 (see Gfx::origin).
+    const int16_t bx = 12;
+    g.origin((int16_t)(block * 263));
     g.color(block == 0 ? accent : kGrey);
     g.text(bx, 189, kFont12, kLeft, page().block[block]);
 
@@ -2060,19 +2241,41 @@ void DeckApp::drawBlock(Gfx& g, uint8_t block)
                 g.color(pass ? kDark : kInk);
                 any = true;
             }
-            char code[16];
+            int16_t x = (int16_t)(bx + (i % 4) * 63);
+            int16_t y = (int16_t)(206 + (i / 4) * 54);
             if (d.act == kActPreset && d.arg < 8)
             {
+                // a station pad shows its frequency (dot type is too wide
+                // for 100.7 and up)
+                char code[16];
                 int f10 = (int)(presets[d.arg] * 10 + 0.5f);
                 snprintf(code, sizeof(code), "%d.%d", f10 / 10, f10 % 10);
+                g.text((int16_t)(x + 30), (int16_t)(y + 16), kFont14B, kCenterX, code);
+            }
+            else if (shortMask & (1u << block))
+            {
+                // out of display memory: the short code, as before
+                g.dot((int16_t)(x + 30), (int16_t)(y + 18), 0, kCenterX, d.mn);
             }
             else
             {
-                snprintf(code, sizeof(code), "%s", d.mn);
+                drawPadLabel(g, d, x, y);
             }
-            int16_t cx = (int16_t)(bx + (i % 4) * 63 + 30);
-            g.dot(cx, (int16_t)(206 + (i / 4) * 54 + 18), 0, kCenterX, code);
         }
+    }
+    g.origin(0);
+}
+
+// The key's name in full, centred on its pad (59 x 50).
+void DeckApp::drawPadLabel(Gfx& g, const PadDef& d, int16_t x, int16_t y)
+{
+    LabelFit f;
+    fitLabel(g, d.label[0] ? d.label : d.mn, kPadTextW, f);
+    const int16_t lineH = f.font == kFont14B ? 16 : 14;
+    int16_t ty = (int16_t)(y + (50 - f.lines * lineH) / 2 - 1);
+    for (uint8_t l = 0; l < f.lines; l++)
+    {
+        g.text((int16_t)(x + 30), (int16_t)(ty + l * lineH), f.font, kCenterX, f.line[l]);
     }
 }
 

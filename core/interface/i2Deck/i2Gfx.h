@@ -71,6 +71,11 @@ class Gfx
     // Dot-matrix text in i2's 5x7 face. size 0 small, 1 medium, 2 large.
     // Upper case, plus a small i for "i2" (other lower case is drawn as upper).
     virtual void dot(int16_t x, int16_t y, uint8_t size, uint8_t align, const char* s, int len = 0) = 0;
+    // Shifts everything drawn after it right by dx pixels (0 = back to
+    // normal), on the chip as VERTEX_TRANSLATE_X. Text drawn with x under 512
+    // costs 4 display-list bytes a character instead of 8, so a layer on the
+    // right of the screen draws at small x and shifts itself across.
+    virtual void origin(int16_t dx) = 0;
     // Clip drawing to a rectangle (until the next clip / unclip).
     virtual void clip(int16_t x, int16_t y, int16_t w, int16_t h) = 0;
     virtual void unclip() = 0;
