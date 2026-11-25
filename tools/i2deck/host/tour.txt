@@ -1,4 +1,6 @@
 # A walk through every screen. Screen buttons are 1-8, pads 0-47.
+# The SD-card-only GRADE deck (WHEELS page): every key name fits its pad.
+checkdeckfile ../grade-wheels/grade.txt
 # The boot splash (original Tracker): frames across the animation, the
 # short and still versions, and a sweep of every tick against the chip's
 # limits. Args: style ms progress status-bits (1 SD, 2 USB, 4 RADIO).
@@ -47,6 +49,23 @@ expectheld 0
 screen 7
 wait 2
 shot 05_cut_clips
+# hold Shift: the screen's display-list size in the top bar
+shift 1
+wait 2
+shot 05b_cut_shift_readout
+shift 0
+# the chip runs out of display list: blocks fall back to short codes,
+# right-hand block first; a new page gets full names again
+dlscale 170
+wait 6
+shot 05c_cut_short_codes
+expectshort 6
+dlscale 100
+screen 7
+wait 2
+expectshort 0
+screen 7
+wait 2
 allpads
 screen 8
 wait 2

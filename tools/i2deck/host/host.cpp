@@ -46,6 +46,23 @@ class RecGfx : public Gfx
         dl = 16; // save/restore context, alpha, line width
         cmd = 16;
     }
+    // Display-list bytes for one CMD_TEXT. The chip draws each character as
+    // a bitmap vertex: VERTEX2II (4 bytes) where x and y are 0-511, else
+    // CELL + VERTEX2F (8 bytes), the same rule the Tracker's own text uses
+    // (string2Bitmaps in libs/NewDisplay). Spaces are counted too. Plus 20
+    // bytes for the command's set-up (context, handle, begin, end).
+    template <typename Adv>
+    static size_t textCost(int16_t left, int16_t y, const char* s, int n, Adv advance)
+    {
+        size_t bytes = 20;
+        int cx = left;
+        for (int i = 0; i < n; i++)
+        {
+            bytes += (cx > 511 || y > 511) ? 8 : 4;
+            cx += advance((unsigned char)s[i]);
+        }
+        return bytes;
+    }
     void add(const char* s, size_t d, size_t c)
     {
         out += s;
@@ -105,9 +122,10 @@ class RecGfx : public Gfx
         out += b;
         out.append(s, (size_t)n);
         out += "\n";
-        int glyphs = 0;
-        for (int i = 0; i < n; i++) glyphs += s[i] != ' ';
-        dl += 16 + 8 * glyphs;
+        int fi = fontIndex(font);
+        int16_t w = textWidth(font, s, n);
+        int16_t left = (align & kCenterX) ? (int16_t)(x - w / 2) : (align & kRight) ? (int16_t)(x - w) : x;
+        dl += textCost(left, y, s, n, [&](unsigned char c) { return (c >= 32 && c < 127) ? kHostAdvance[fi][c - 32] : 6; });
         cmd += 12 + ((n + 4) & ~3);
     }
     int16_t textWidth(uint8_t font, const char* s, int len) override
@@ -133,10 +151,17 @@ class RecGfx : public Gfx
         out += b;
         out.append(s, (size_t)n);
         out += "\n";
-        int glyphs = 0;
-        for (int i = 0; i < n; i++) glyphs += s[i] != ' ';
-        dl += 16 + 8 * glyphs;
+        int cw = i2dot::cellW(size);
+        int16_t w = (int16_t)(cw * n);
+        int16_t left = (align & kCenterX) ? (int16_t)(x - w / 2) : (align & kRight) ? (int16_t)(x - w) : x;
+        dl += textCost(left, y, s, n, [&](unsigned char) { return cw; });
         cmd += 12 + ((n + 4) & ~3);
+    }
+    void origin(int16_t dx) override
+    {
+        char b[32];
+        snprintf(b, sizeof(b), "X %d\n", dx);
+        add(b, 4, 4);
     }
     void clip(int16_t x, int16_t y, int16_t w, int16_t h) override
     {
@@ -353,6 +378,33 @@ static bool nameToButton(const char* n, Button& b)
     return false;
 }
 
+// Every key name must fit its pad (DeckApp::drawPadLabel). Returns problems.
+static int checkLabels(const Deck& d, const char* what, int& split)
+{
+    static RecGfx mg;
+    int problems = 0;
+    for (uint8_t p = 0; p < d.pageCount; p++)
+    {
+        for (uint8_t k = 0; k < kPads; k++)
+        {
+            const PadDef& pd = d.pages[p].pads[k];
+            if (!pd.used() || pd.act == kActPreset) continue;
+            LabelFit f;
+            fitLabel(mg, pd.label[0] ? pd.label : pd.mn, kPadTextW, f);
+            if (f.how == kFitClipped)
+            {
+                printf("  !! %s page %d pad %d: \"%s\" doesn't fit its pad\n", what, p, k, pd.label);
+                problems++;
+            }
+            else if (f.how == kFitSplit)
+            {
+                split++;
+            }
+        }
+    }
+    return problems;
+}
+
 int main(int argc, char** argv)
 {
     if (argc < 4)
@@ -364,6 +416,7 @@ int main(int argc, char** argv)
     HostIo io;
     sv.root = argv[1];
     std::string outDir = argv[2];
+    const std::string scriptPath = argv[3];
     FILE* sc = fopen(argv[3], "r");
     if (!sc)
     {
@@ -418,8 +471,10 @@ int main(int argc, char** argv)
                     empty++;
                 }
             }
-            printf("deck %-7s %-9s rev %d pages %d keys %3d dials %2d problems %d\n", d.name, kAll[i]->app, d.rev, d.pageCount, keys, dials,
-                   empty);
+            int split = 0;
+            empty += checkLabels(d, d.name, split);
+            printf("deck %-7s %-9s rev %d pages %d keys %3d dials %2d split names %2d problems %d\n", d.name, kAll[i]->app, d.rev,
+                   d.pageCount, keys, dials, split, empty);
             bad |= empty > 0 || keys == 0;
         }
     }
@@ -552,6 +607,7 @@ int main(int argc, char** argv)
     size_t worstCmd[kLayerCount] = {};
     size_t current[kLayerCount] = {};
     size_t worstFrame = 0;
+    int dlScale = 100; // percent; "dlscale 140" pretends the chip's lists are bigger
     RecGfx g;
     auto frameCheck = [&]() {
         size_t sum = 0;
@@ -565,6 +621,7 @@ int main(int argc, char** argv)
             now += 17;
             frames++;
             app.tick(now);
+            bool drew = false;
             for (uint8_t layer = 0; layer < kLayerCount; layer++)
             {
                 if (!app.dirty(layer)) continue;
@@ -573,8 +630,17 @@ int main(int argc, char** argv)
                 current[layer] = g.dl;
                 if (g.dl > worst[layer]) worst[layer] = g.dl;
                 if (g.cmd > worstCmd[layer]) worstCmd[layer] = g.cmd;
+                drew = true;
             }
             frameCheck();
+            if (!drew)
+            {
+                // like fI2Deck: once everything is drawn, report the frame's
+                // size (scaled by "dlscale" to try the out-of-memory fallback)
+                size_t sum = 0;
+                for (size_t c : current) sum += c;
+                app.frameBytes((uint16_t)(sum * dlScale / 100));
+            }
         }
     };
 
@@ -638,6 +704,41 @@ int main(int argc, char** argv)
             advance(1);
         }
         else if (!strcmp(cmd, "shift") && sscanf(line, "%*s %d", &a) == 1) app.button(Button::Shift, a != 0);
+        else if (!strcmp(cmd, "dlscale") && sscanf(line, "%*s %d", &a) == 1) dlScale = a;
+        else if (!strcmp(cmd, "checkdeckfile") && sscanf(line, "%*s %63s", name) == 1)
+        {
+            // a deck that lives only on the SD card (e.g. grade-wheels/grade.txt)
+            std::string dir = scriptPath;
+            size_t slash = dir.find_last_of('/');
+            dir = slash == std::string::npos ? std::string(".") : dir.substr(0, slash);
+            std::string path = dir + "/" + name;
+            FILE* df = fopen(path.c_str(), "rb");
+            if (!df)
+            {
+                printf("!! can't open %s\n", path.c_str());
+                bad = 1;
+            }
+            else
+            {
+                static char buf[16384];
+                size_t n = fread(buf, 1, sizeof(buf) - 1, df);
+                fclose(df);
+                static Deck fd;
+                int keys = parseDeck(buf, n, fd);
+                int split = 0;
+                int problems = checkLabels(fd, name, split);
+                printf("deck file %s: rev %d keys %d split names %d problems %d\n", name, fd.rev, keys, split, problems);
+                bad |= problems > 0 || keys == 0;
+            }
+        }
+        else if (!strcmp(cmd, "expectshort") && sscanf(line, "%*s %d", &a) == 1)
+        {
+            if (app.shortBlocks() != a)
+            {
+                printf("!! short blocks %d, expected %d\n", app.shortBlocks(), a);
+                bad = 1;
+            }
+        }
         else if (!strcmp(cmd, "rec") && sscanf(line, "%*s %d", &a) == 1) app.button(Button::Rec, a != 0);
         else if (!strcmp(cmd, "expectdeck") && sscanf(line, "%*s %d", &a) == 1)
         {
@@ -940,10 +1041,12 @@ int main(int argc, char** argv)
         bad |= worst[l] > 8000 || worstCmd[l] > 3700;
     }
     // The Tracker builds each frame from every visible control and stops
-    // adding controls at 8172 bytes. Stay well under, to leave room for the
-    // Tracker's own controls and for error in these estimates.
-    printf("whole frame worst: %zu B (budget 6000, hard limit 8172)\n", worstFrame);
-    bad |= worstFrame > 6000;
+    // adding controls at 8172 bytes. Stay well under, to leave room for a
+    // Tracker popup and for error in these estimates. On the Tracker, i2 DECK
+    // also measures the real size and falls back to short key codes above
+    // 7600 bytes (DeckApp::frameBytes), so a wrong estimate can't blank it.
+    printf("whole frame worst: %zu B (budget 7000, hard limit 8172)\n", worstFrame);
+    bad |= worstFrame > 7000;
     if (io.stuck)
     {
         printf("!! %d key-up without key-down\n", io.stuck);
